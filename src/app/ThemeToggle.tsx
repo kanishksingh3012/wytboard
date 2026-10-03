@@ -1,29 +1,22 @@
 import { Button, Tooltip } from '@heroui/react'
 import { Moon, Sun } from 'lucide-react'
-import type { Theme } from './useTheme'
+import { useTheme } from './useTheme'
 
-interface ThemeToggleProps {
-  theme: Theme
-  onToggle: () => void
-}
-
-export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
+export function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme()
   const nextTheme = theme === 'dark' ? 'light' : 'dark'
 
   return (
-    <div className="bg-surface shadow-float flex h-9 items-center rounded-xl">
-      <Tooltip delay={400}>
-        <Button
-          isIconOnly
-          size="sm"
-          variant="ghost"
-          aria-label={`Switch to ${nextTheme} theme`}
-          onPress={onToggle}
-        >
-          {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </Button>
-        <Tooltip.Content>Switch to {nextTheme} theme</Tooltip.Content>
-      </Tooltip>
-    </div>
+    <Tooltip delay={400}>
+      <Button
+        isIconOnly
+        variant="ghost"
+        aria-label={`Switch to ${nextTheme} theme`}
+        onPress={toggleTheme}
+      >
+        {theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+      </Button>
+      <Tooltip.Content>Switch to {nextTheme} theme</Tooltip.Content>
+    </Tooltip>
   )
 }

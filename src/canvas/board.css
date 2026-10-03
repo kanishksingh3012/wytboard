@@ -21,3 +21,38 @@
 .board .excalidraw .default-sidebar-trigger {
   display: none;
 }
+
+/*
+ * Excalidraw only offers a top toolbar on desktop and tablet layouts, so it is
+ * moved to the bottom-centre here. Its phone layout is left alone.
+ */
+.board .excalidraw:not(.excalidraw--mobile) .App-menu_top > .shapes-section {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 3;
+}
+
+/* Below this width the toolbar would collide with the zoom and undo buttons. */
+@media (max-width: 1100px) {
+  .board .excalidraw:not(.excalidraw--mobile) .App-menu_top > .shapes-section {
+    bottom: 4.25rem;
+  }
+}
+
+/* Keep the usage hint above the toolbar rather than below it, off-screen. */
+.board .excalidraw:not(.excalidraw--mobile) .shapes-section .HintViewer {
+  position: absolute;
+  top: auto;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+}
+
+/* The "more tools" menu must open upwards now. */
+.board .excalidraw:not(.excalidraw--mobile) .App-toolbar .dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 0.5rem);
+  margin-top: 0;
+}

@@ -28,13 +28,33 @@ answers clarifying questions and probes their reasoning.
 
 Keep these areas separate so each can be swapped without touching the others:
 
-- `canvas/`: Excalidraw wrapper, board snapshot export, change detection
-- `llm/`: one OpenAI-compatible chat client plus provider presets (Gemini, Groq,
-  OpenRouter, xAI, Ollama, custom URL). No provider-specific code outside this folder.
-- `voice/`: a `SpeechInput` and a `SpeechOutput` interface, with the browser
-  implementations behind them, so a better engine (e.g. Kokoro) can replace them later
-- `interviewer/`: prompts, personalities, session state, timer, hint budget
-- `library/`: saved boards, transcripts, export and import
+- `src/pages/`: `Home` (hero input plus board library), `BoardPage`, `SettingsPage`.
+  Routing is hash-based (`react-router` `HashRouter`) so static hosts need no rewrites.
+- `src/canvas/`: Excalidraw wrapper, autosave, thumbnails, dot grid. Later: board
+  snapshot export and change detection for the interviewer.
+- `src/llm/`: one OpenAI-compatible chat client plus provider presets (Gemini, Groq,
+  OpenRouter, custom URL). No provider-specific code outside this folder.
+- `src/interviewer/`: prompts, personalities, the chat panel. Later: session
+  state, timer, hint budget.
+- `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
+- `src/settings/`: provider, per-provider API keys and models, personality and
+  mode, in `localStorage`.
+- `voice/` (not built yet): a `SpeechInput` and a `SpeechOutput` interface, with the
+  browser implementations behind them, so a better engine (e.g. Kokoro) can replace them.
+
+## Layout decisions (made by the user)
+
+- The app opens on the home screen, never straight on a canvas.
+- On a board, the drawing toolbar is at the bottom-centre and the interviewer
+  panel is at the top-right. Excalidraw has no option for a bottom toolbar, so
+  `src/canvas/board.css` repositions it; re-check that file when upgrading Excalidraw.
+- Excalidraw's own shape-library button is hidden to avoid confusion with the board library.
+
+## Dependencies
+
+`package.json` has `overrides` that pin patched versions of packages Excalidraw
+depends on (nanoid, sass, lodash-es). Keep `npm audit` at zero; when upgrading
+Excalidraw, check whether the overrides are still needed.
 
 ## Interviewer rules
 
