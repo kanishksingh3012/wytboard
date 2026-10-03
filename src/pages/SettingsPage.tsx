@@ -17,6 +17,8 @@ import { ThemeToggle } from '../app/ThemeToggle'
 import { PERSONALITIES, type PersonalityId } from '../interviewer/personalities'
 import { MODES, type SessionMode } from '../interviewer/session'
 import { chat, listModels } from '../llm/client'
+import { kokoroSpeech, preloadKokoro } from '../voice/kokoro'
+import { getPersonality } from '../interviewer/personalities'
 import { PROVIDERS, getProvider, type ProviderId } from '../llm/providers'
 import { baseUrlFor, llmConfigFrom, updateSettings, useSettings } from '../settings/settings'
 
@@ -45,6 +47,7 @@ export function SettingsPage() {
   const [showKey, setShowKey] = useState(false)
   const [modelOptions, setModelOptions] = useState<string[]>([])
   const [status, setStatus] = useState<Status>(IDLE)
+  const [voiceStatus, setVoiceStatus] = useState<Status>(IDLE)
 
   const setApiKey = (value: string) =>
     updateSettings({ apiKeys: { ...settings.apiKeys, [settings.provider]: value } })
@@ -80,6 +83,25 @@ export function SettingsPage() {
       setStatus({ kind: 'ok', text: 'Connected. The interviewer is ready to use this model.' })
     } catch (cause) {
       setStatus({ kind: 'error', text: cause instanceof Error ? cause.message : 'Failed.' })
+    }
+  }
+
+  // Downloads the natural voice model if needed, then plays a sample.
+  const testVoice = async () => {
+    setVoiceStatus({ kind: 'busy', text: 'Preparing the voice model…' })
+    try {
+      await preloadKokoro((percent) =>
+        setVoiceStatus({ kind: 'busy', text: `Downloading the voice model… ${percent}%` }),
+      )
+      setVoiceStatus({ kind: 'busy', text: 'Generating a sample…' })
+      const personality = getPersonality(settings.personality)
+      kokoroSpeech.speak(`Hi, I'm ${personality.name}. I'll be your interviewer today.`, {
+        ...personality.voice,
+        onStart: () => setVoiceStatus({ kind: 'ok', text: 'The natural voice is ready.' }),
+        onEnd: () => undefined,
+      })
+    } catch (cause) {
+      setVoiceStatus({ kind: 'error', text: cause instanceof Error ? cause.message : 'Failed.' })
     }
   }
 
@@ -275,6 +297,64 @@ export function SettingsPage() {
               </Radio>
             ))}
           </RadioGroup>
+        </Section>
+
+        <Section
+          title="Voice"
+          description="How the interviewer sounds. Each interviewer has their own voice."
+        >
+          <RadioGroup
+            variant="secondary"
+            value={settings.voiceEngine}
+            onChange={(value) => updateSettings({ voiceEngine: value as 'browser' | 'kokoro' })}
+          >
+            <Label>Voice engine</Label>
+            <Radio value="browser">
+              <Radio.Content>
+                <Radio.Control>
+                  <Radio.Indicator />
+                </Radio.Control>
+                <Label>Browser voice</Label>
+              </Radio.Content>
+              <Description>Instant and needs no download, but sounds robotic.</Description>
+            </Radio>
+            <Radio value="kokoro">
+              <Radio.Content>
+                <Radio.Control>
+                  <Radio.Indicator />
+                </Radio.Control>
+                <Label>Natural voice</Label>
+              </Radio.Content>
+              <Description>
+                Sounds much more human. Downloads a voice model of about 90 MB once, and each
+                reply takes a few seconds to prepare on slower devices.
+              </Description>
+            </Radio>
+          </RadioGroup>
+
+          {settings.voiceEngine === 'kokoro' && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                isDisabled={voiceStatus.kind === 'busy'}
+                onPress={() => void testVoice()}
+              >
+                Download and test voice
+              </Button>
+              <p
+                role="status"
+                className={`text-sm ${
+                  voiceStatus.kind === 'error'
+                    ? 'text-danger'
+                    : voiceStatus.kind === 'ok'
+                      ? 'text-success'
+                      : 'text-muted'
+                }`}
+              >
+                {voiceStatus.text}
+              </p>
+            </div>
+          )}
         </Section>
       </main>
     </div>

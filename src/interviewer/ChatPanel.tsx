@@ -12,6 +12,7 @@ import {
   useSettings,
 } from '../settings/settings'
 import { browserRecognition } from '../voice/recognition'
+import { kokoroSpeech } from '../voice/kokoro'
 import { browserSpeech } from '../voice/speech'
 import { avatarFor, getPersonality } from './personalities'
 import { HINT_BUDGET } from './phases'
@@ -48,6 +49,7 @@ export function ChatPanel(props: ChatPanelProps) {
   const session = boardSession ?? sessionDefaultsFrom(settings)
   const personality = getPersonality(session.personality)
   const avatar = avatarFor(session.personality)
+  const speech = settings.voiceEngine === 'kokoro' && kokoroSpeech.supported ? kokoroSpeech : browserSpeech
 
   const [open, setOpen] = useState(true)
   const [messages, setMessages] = useState<TranscriptMessage[] | null>(null)
@@ -68,7 +70,7 @@ export function ChatPanel(props: ChatPanelProps) {
     })
     return () => {
       cancelled = true
-      browserSpeech.stop()
+      kokoroSpeech.stop()
       browserRecognition.stop()
     }
   }, [boardId])
@@ -78,7 +80,7 @@ export function ChatPanel(props: ChatPanelProps) {
   }, [messages, busy, open])
 
   const stopSpeaking = () => {
-    browserSpeech.stop()
+    kokoroSpeech.stop()
     setSpeaking(false)
   }
 
@@ -154,7 +156,7 @@ export function ChatPanel(props: ChatPanelProps) {
       ]
       setMessages(next)
       if (settings.voiceEnabled) {
-        browserSpeech.speak(reply, {
+        speech.speak(reply, {
           ...personality.voice,
           onStart: () => setSpeaking(true),
           onEnd: () => setSpeaking(false),

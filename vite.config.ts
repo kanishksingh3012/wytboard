@@ -7,6 +7,8 @@ export default defineConfig({
   // Relative asset paths, so the build works at any URL (e.g. GitHub Pages subpaths).
   base: './',
   plugins: [react(), tailwindcss()],
+  // The voice worker imports ES modules that rely on import.meta.
+  worker: { format: 'es' },
   define: {
     // Required by @excalidraw/excalidraw
     'process.env.IS_PREACT': JSON.stringify('false'),

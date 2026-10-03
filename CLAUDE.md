@@ -42,9 +42,10 @@ Keep these areas separate so each can be swapped without touching the others:
 - `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.
-- `src/voice/`: `SpeechOutput` interface with the browser implementation, so a better
-  engine (e.g. Kokoro) can replace it, and `SpeechInput` (browser speech recognition,
-  tap to talk, tap to stop and send).
+- `src/voice/`: `SpeechOutput` with two engines: the browser voice (default) and
+  Kokoro (`kokoro-js`, natural voice, runs in a web worker, ~90 MB model fetched from
+  Hugging Face on first use and cached). Each interviewer has their own voice.
+  `SpeechInput` is browser speech recognition (tap to talk, tap to stop and send).
 
 ## Layout decisions (made by the user)
 
@@ -63,7 +64,8 @@ Keep these areas separate so each can be swapped without touching the others:
 ## Dependencies
 
 `package.json` has `overrides` that pin patched versions of packages Excalidraw
-depends on (nanoid, sass, lodash-es). Keep `npm audit` at zero; when upgrading
+depends on (nanoid, sass, lodash-es), and replace `sharp` with the empty
+package in `stubs/sharp` (Node-only, pulled in by `kokoro-js`, never loaded in the browser). Keep `npm audit` at zero; when upgrading
 Excalidraw, check whether the overrides are still needed.
 
 ## Interviewer rules

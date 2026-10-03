@@ -17,6 +17,8 @@ export interface Settings {
   durationMin: number
   /** Whether the interviewer speaks its replies aloud. */
   voiceEnabled: boolean
+  /** 'kokoro' is the natural voice model; it needs a one-time download. */
+  voiceEngine: 'browser' | 'kokoro'
 }
 
 const STORAGE_KEY = 'wytboard-settings'
@@ -31,6 +33,7 @@ const DEFAULTS: Settings = {
   interviewType: 'new-product',
   durationMin: 45,
   voiceEnabled: true,
+  voiceEngine: 'browser',
 }
 
 function load(): Settings {

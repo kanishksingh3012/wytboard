@@ -11,8 +11,8 @@ export interface Personality {
   description: string
   /** Inserted into the system prompt. */
   prompt: string
-  /** Speech tuning so each interviewer sounds a little different. */
-  voice: { rate: number; pitch: number }
+  /** Each interviewer has their own voice: a Kokoro voice id, plus tuning for the browser engine. */
+  voice: { rate: number; pitch: number; gender: 'female' | 'male'; voice: string }
   /** Fixed avatar features, so the picture matches the character. */
   avatar: { hair: string; beard: boolean }
 }
@@ -26,7 +26,7 @@ export const PERSONALITIES: Personality[] = [
     prompt:
       'Personality: warm and relaxed. Put the candidate at ease with your tone, ' +
       'but stay neutral about the quality of their ideas.',
-    voice: { rate: 1, pitch: 1.1 },
+    voice: { rate: 1, pitch: 1.1, gender: 'female', voice: 'af_heart' },
     avatar: { hair: 'variant35', beard: false },
   },
   {
@@ -37,7 +37,7 @@ export const PERSONALITIES: Personality[] = [
     prompt:
       'Personality: sceptical and direct. Question assumptions, ask for evidence ' +
       'and for the trade-offs behind each decision. Never be rude.',
-    voice: { rate: 1.05, pitch: 0.9 },
+    voice: { rate: 1.05, pitch: 0.9, gender: 'male', voice: 'am_michael' },
     avatar: { hair: 'variant08', beard: true },
   },
   {
@@ -48,7 +48,7 @@ export const PERSONALITIES: Personality[] = [
     prompt:
       'Personality: quiet. Use the fewest words possible, often a single short ' +
       'sentence, and ask follow-up questions only when something important is unclear.',
-    voice: { rate: 0.92, pitch: 1 },
+    voice: { rate: 0.92, pitch: 1, gender: 'female', voice: 'bf_emma' },
     avatar: { hair: 'variant15', beard: false },
   },
   {
@@ -59,7 +59,7 @@ export const PERSONALITIES: Personality[] = [
     prompt:
       'Personality: easy-going and curious. Ask open "why" and "what if" questions about ' +
       'the reasoning behind each choice, without steering towards any answer.',
-    voice: { rate: 1, pitch: 0.95 },
+    voice: { rate: 1, pitch: 0.95, gender: 'male', voice: 'bm_george' },
     avatar: { hair: 'variant03', beard: false },
   },
 ]

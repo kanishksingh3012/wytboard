@@ -41,6 +41,8 @@ export function FeedbackDialog({ feedback, isOpen, onClose }: FeedbackDialogProp
                 {[
                   { title: 'What went well', items: feedback.strengths },
                   { title: 'What to do differently', items: feedback.improvements },
+                  // Absent on feedback saved before this section existed.
+                  { title: 'What a strong answer covers', items: feedback.strongAnswer ?? [] },
                 ].map(
                   (group) =>
                     group.items.length > 0 && (

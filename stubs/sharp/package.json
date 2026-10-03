@@ -1,0 +1,7 @@
+{
+  "name": "sharp",
+  "version": "0.0.0-stub",
+  "description": "Empty stand-in. sharp is a Node-only image library that kokoro-js pulls in through @huggingface/transformers; the browser build never loads it, and the real package has open security advisories.",
+  "main": "index.js",
+  "license": "MIT"
+}

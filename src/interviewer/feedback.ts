@@ -15,6 +15,8 @@ export interface Feedback {
   scores: { criterion: string; score: number; comment: string }[]
   strengths: string[]
   improvements: string[]
+  /** What a strong answer to this specific problem would cover. */
+  strongAnswer: string[]
 }
 
 const PROMPT = `You are a senior product designer who has just finished running a whiteboard
@@ -27,7 +29,8 @@ Reply with JSON only, no markdown, in exactly this shape:
   "summary": "two or three sentences on the overall performance",
   "scores": [{ "criterion": "<name>", "score": <integer 1-5>, "comment": "one specific sentence" }],
   "strengths": ["up to three specific strengths"],
-  "improvements": ["up to three specific things to do differently next time"]
+  "improvements": ["up to three specific things to do differently next time"],
+  "strongAnswer": ["four to six things a strong answer to this specific problem would cover, as areas to address, not as a finished solution"]
 }
 Score exactly these criteria, in this order: ${CRITERIA.join(', ')}.`
 
@@ -47,6 +50,7 @@ function parseFeedback(reply: string): Feedback {
     })),
     strengths: (data.strengths ?? []).map(String),
     improvements: (data.improvements ?? []).map(String),
+    strongAnswer: (data.strongAnswer ?? []).map(String),
   }
 }
 
