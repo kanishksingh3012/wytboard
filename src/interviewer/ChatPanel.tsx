@@ -223,7 +223,8 @@ export function ChatPanel(props: ChatPanelProps) {
   const visible = messages?.filter((message) => !message.hidden) ?? []
   const started = (messages?.length ?? 0) > 0
 
-  // Ctrl+M starts and stops talking from anywhere, so the hands can stay on the board.
+  // Space starts and stops talking, so the hands can stay on the board. While
+  // typing (chat box, canvas text) Space types a space and Ctrl+M does the same job.
   const canTalk = Boolean(config) && started && !props.ended && browserRecognition.supported && !busy
   const toggleRef = useRef(toggleRecording)
   useEffect(() => {
@@ -232,10 +233,16 @@ export function ChatPanel(props: ChatPanelProps) {
   useEffect(() => {
     if (!canTalk) return
     const onShortcut = (event: globalThis.KeyboardEvent) => {
-      if (event.ctrlKey && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'm') {
-        event.preventDefault()
-        toggleRef.current()
-      }
+      const target = event.target as HTMLElement | null
+      const typing = target?.matches('input, textarea, select, [contenteditable="true"]') ?? false
+      const modified = event.shiftKey || event.altKey || event.metaKey
+      const space = event.code === 'Space' && !event.ctrlKey && !modified && !typing
+      const ctrlM = event.ctrlKey && !modified && event.key.toLowerCase() === 'm'
+      if (!space && !ctrlM) return
+      // Keep the key from also pressing a focused button or panning the canvas.
+      event.preventDefault()
+      event.stopPropagation()
+      if (!event.repeat) toggleRef.current()
     }
     window.addEventListener('keydown', onShortcut, true)
     return () => window.removeEventListener('keydown', onShortcut, true)
@@ -390,7 +397,7 @@ export function ChatPanel(props: ChatPanelProps) {
             <TextArea
               aria-label={`Message ${personality.name}`}
               className="max-h-32 min-h-9 flex-1 resize-none text-sm"
-              placeholder={recording ? 'Listening… Ctrl+M or stop when done' : 'Talk (Ctrl+M) or type…'}
+              placeholder={recording ? 'Listening… press Space when done' : 'Press Space to talk, or type…'}
               rows={1}
               value={draft}
               readOnly={recording}
@@ -408,7 +415,7 @@ export function ChatPanel(props: ChatPanelProps) {
                 >
                   {recording ? <Square className="size-3.5" /> : <Mic className="size-4" />}
                 </Button>
-                <Tooltip.Content>{recording ? 'Stop and send (Ctrl+M)' : 'Talk (Ctrl+M)'}</Tooltip.Content>
+                <Tooltip.Content>{recording ? 'Stop and send (Space)' : 'Talk (Space)'}</Tooltip.Content>
               </Tooltip>
             )}
             <Button

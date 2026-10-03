@@ -56,7 +56,8 @@ Keep these areas separate so each can be swapped without touching the others:
 - The interviewer panel is a character card: illustrated avatar (DiceBear Lorelei,
   generated locally), name, status and a voice wave that moves while speaking.
 - The interviewer panel is open by default on every screen size.
-- Ctrl+M starts and stops talking to the interviewer.
+- Space starts and stops talking to the interviewer once the interview has started
+  (Ctrl+M while typing). This takes over Excalidraw's hold-Space-to-pan during a session.
 - Any change to what is stored or sent must be reflected in `PRIVACY.md` and the
   Privacy section of Settings.
 - On a board, the drawing toolbar is at the bottom-centre and the interviewer
