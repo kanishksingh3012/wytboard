@@ -31,13 +31,19 @@ export function phaseIndexAt(elapsedMs: number, durationMin: number): number {
 export function timeContext(startedAt: number, durationMin: number): string {
   const elapsedMs = Date.now() - startedAt
   const elapsedMin = Math.floor(elapsedMs / 60_000)
-  const phase = PHASES[phaseIndexAt(elapsedMs, durationMin)].label
+  const index = phaseIndexAt(elapsedMs, durationMin)
+  const phase = PHASES[index].label
   const over = elapsedMin >= durationMin
+  const closing = index === PHASES.length - 1
 
   return (
     `TIME\n${elapsedMin} of ${durationMin} minutes have passed` +
     (over ? ' and the session is over time. Ask the candidate to wrap up.' : '.') +
     ` By now they should be in the "${phase}" phase (order: ${PHASES.map((p) => p.label).join(', ')}).` +
-    ` If their work is clearly behind that, mention the time in one short sentence; otherwise do not bring it up.`
+    ` If their work is clearly behind that, mention the time in one short sentence; otherwise do not bring it up.` +
+    (closing
+      ? ` The session is closing: if you have not already, ask them to summarise their solution, then ask` +
+        ` what they would do next with more time. One question per turn.`
+      : '')
   )
 }

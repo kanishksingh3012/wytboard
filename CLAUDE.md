@@ -56,6 +56,9 @@ Keep these areas separate so each can be swapped without touching the others:
 - The interviewer panel is a character card: illustrated avatar (DiceBear Lorelei,
   generated locally), name, status and a voice wave that moves while speaking.
 - The interviewer panel is open by default on every screen size.
+- Ctrl+M starts and stops talking to the interviewer.
+- Any change to what is stored or sent must be reflected in `PRIVACY.md` and the
+  Privacy section of Settings.
 - On a board, the drawing toolbar is at the bottom-centre and the interviewer
   panel is at the top-right. Excalidraw has no option for a bottom toolbar, so
   `src/canvas/board.css` repositions it; re-check that file when upgrading Excalidraw.
@@ -96,7 +99,9 @@ Free LLM tiers are rate-limited, so every request must be justified:
 - Downscale and compress the snapshot before sending.
 - Keep only the latest snapshot in the conversation history; drop older images.
 - Always send typed canvas text as plain text.
-- Summarise early turns once the history grows long. (Not built yet.)
+- Long sessions send only the opening exchange plus the most recent turns
+  (`recentHistory` in `ChatPanel`); this needs no extra requests. Feedback still
+  uses the full transcript.
 - If the chosen model cannot read images, send text only and tell the user.
 
 ## UI style

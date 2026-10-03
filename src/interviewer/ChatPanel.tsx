@@ -12,7 +12,7 @@ import {
   useSettings,
 } from '../settings/settings'
 import { browserRecognition } from '../voice/recognition'
-import { kokoroSpeech } from '../voice/kokoro'
+import { kokoroSpeech, preloadKokoro } from '../voice/kokoro'
 import { browserSpeech } from '../voice/speech'
 import { avatarFor, getPersonality } from './personalities'
 import { HINT_BUDGET } from './phases'
@@ -33,6 +33,19 @@ interface ChatPanelProps {
   hintsUsed: number
   onStart: () => number
   onHintUsed: () => void
+}
+
+/** Turns sent to the model: the opening exchange plus the most recent ones. */
+const RECENT_TURNS = 24
+
+/**
+ * Keeps long sessions inside free-tier limits without extra requests: the
+ * problem statement always stays, older middle turns are left out. The full
+ * transcript is still saved and used for feedback.
+ */
+function recentHistory(history: TranscriptMessage[]): TranscriptMessage[] {
+  if (history.length <= RECENT_TURNS + 2) return history
+  return [...history.slice(0, 2), ...history.slice(-RECENT_TURNS)]
 }
 
 /** The one board image kept in the conversation, and the turn it belongs to. */
@@ -75,6 +88,13 @@ export function ChatPanel(props: ChatPanelProps) {
     }
   }, [boardId])
 
+  // Loading the natural voice takes several seconds, so start as the board opens
+  // rather than when the first reply arrives.
+  const usesKokoro = speech === kokoroSpeech && settings.voiceEnabled
+  useEffect(() => {
+    if (usesKokoro) void preloadKokoro(() => undefined).catch(() => undefined)
+  }, [usesKokoro])
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
   }, [messages, busy, open])
@@ -113,6 +133,9 @@ export function ChatPanel(props: ChatPanelProps) {
     try {
       // Quota rule: a new image is sent only when the board changed since the
       // last one, or when the user explicitly asks for a review.
+      const sent = recentHistory(history)
+      // If the turn carrying the board image has scrolled out, send the board again.
+      if (!sent.some((message) => message.id === snapshot.current?.messageId)) snapshot.current = null
       const board = await captureBoard()
       if (board?.image && (options.review || board.version !== snapshot.current?.version)) {
         snapshot.current = { messageId: userMessage.id, version: board.version, image: board.image }
@@ -123,8 +146,8 @@ export function ChatPanel(props: ChatPanelProps) {
 
       const buildRequest = (withImage: boolean): ChatMessage[] => [
         { role: 'system', content: buildSystemPrompt({ ...session, brief, startedAt }) },
-        ...history.map((message, index): ChatMessage => {
-          const isLast = index === history.length - 1
+        ...sent.map((message, index): ChatMessage => {
+          const isLast = index === sent.length - 1
           const text = isLast ? `${message.content}${boardText}\n\n${RULE_REMINDER}` : message.content
           // Only the latest snapshot stays in the conversation; older images are dropped.
           if (withImage && message.id === snapshot.current?.messageId) {
@@ -197,6 +220,27 @@ export function ChatPanel(props: ChatPanelProps) {
     })
   }
 
+  const visible = messages?.filter((message) => !message.hidden) ?? []
+  const started = (messages?.length ?? 0) > 0
+
+  // Ctrl+M starts and stops talking from anywhere, so the hands can stay on the board.
+  const canTalk = Boolean(config) && started && !props.ended && browserRecognition.supported && !busy
+  const toggleRef = useRef(toggleRecording)
+  useEffect(() => {
+    toggleRef.current = toggleRecording
+  })
+  useEffect(() => {
+    if (!canTalk) return
+    const onShortcut = (event: globalThis.KeyboardEvent) => {
+      if (event.ctrlKey && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'm') {
+        event.preventDefault()
+        toggleRef.current()
+      }
+    }
+    window.addEventListener('keydown', onShortcut, true)
+    return () => window.removeEventListener('keydown', onShortcut, true)
+  }, [canTalk])
+
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
@@ -204,8 +248,6 @@ export function ChatPanel(props: ChatPanelProps) {
     }
   }
 
-  const visible = messages?.filter((message) => !message.hidden) ?? []
-  const started = (messages?.length ?? 0) > 0
   const status = recording ? 'Hearing you' : speaking ? 'Speaking' : busy ? 'Thinking' : 'Listening'
 
   if (!open) {
@@ -348,7 +390,7 @@ export function ChatPanel(props: ChatPanelProps) {
             <TextArea
               aria-label={`Message ${personality.name}`}
               className="max-h-32 min-h-9 flex-1 resize-none text-sm"
-              placeholder={recording ? 'Listening… tap stop when done' : 'Talk or type…'}
+              placeholder={recording ? 'Listening… Ctrl+M or stop when done' : 'Talk (Ctrl+M) or type…'}
               rows={1}
               value={draft}
               readOnly={recording}
@@ -366,7 +408,7 @@ export function ChatPanel(props: ChatPanelProps) {
                 >
                   {recording ? <Square className="size-3.5" /> : <Mic className="size-4" />}
                 </Button>
-                <Tooltip.Content>{recording ? 'Stop and send' : 'Talk'}</Tooltip.Content>
+                <Tooltip.Content>{recording ? 'Stop and send (Ctrl+M)' : 'Talk (Ctrl+M)'}</Tooltip.Content>
               </Tooltip>
             )}
             <Button

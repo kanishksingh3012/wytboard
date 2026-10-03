@@ -45,6 +45,18 @@ export async function preloadKokoro(progress: (percent: number) => void): Promis
   if (response.type === 'error') throw new Error(response.message)
 }
 
+let analyser: AnalyserNode | null = null
+let levels: Uint8Array<ArrayBuffer> | null = null
+
+/** Loudness of the speech playing right now, 0 to 1; null when nothing is playing. */
+export function getSpeechLevel(): number | null {
+  if (!source || !analyser || !levels) return null
+  analyser.getByteTimeDomainData(levels)
+  let sum = 0
+  for (const sample of levels) sum += ((sample - 128) / 128) ** 2
+  return Math.min(1, Math.sqrt(sum / levels.length) * 4)
+}
+
 function stopPlayback() {
   if (source) {
     source.onended = null
@@ -53,36 +65,65 @@ function stopPlayback() {
   }
 }
 
+function playSamples(samples: Float32Array, sampleRate: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (!context) return resolve()
+    if (!analyser) {
+      analyser = context.createAnalyser()
+      analyser.fftSize = 256
+      levels = new Uint8Array(analyser.fftSize)
+      analyser.connect(context.destination)
+    }
+    const buffer = context.createBuffer(1, samples.length, sampleRate)
+    buffer.copyToChannel(samples as Float32Array<ArrayBuffer>, 0)
+    source = context.createBufferSource()
+    source.buffer = buffer
+    source.connect(analyser)
+    source.onended = () => {
+      source = null
+      resolve()
+    }
+    source.start()
+  })
+}
+
 export const kokoroSpeech: SpeechOutput = {
   supported: typeof Worker !== 'undefined' && typeof AudioContext !== 'undefined',
 
   speak(text, options: SpeakOptions) {
     stopPlayback()
-    const id = nextId++
-    currentId = id
+    const run = nextId++
+    currentId = run
     // Created during the user's click or key press, so the browser allows audio.
     context ??= new AudioContext()
     void context.resume()
 
-    void ask({ id, text, voice: options.voice, speed: options.rate }).then((response) => {
-      if (currentId !== id) return
-      if (response.type !== 'audio' || !context) {
-        // Never leave the interviewer silent: fall back to the browser's voice.
-        browserSpeech.speak(text, options)
-        return
+    // Sentences are generated one by one, so speech starts after the first
+    // sentence is ready instead of after the whole reply.
+    const sentences = text.match(/[^.!?]+[.!?]*\s*/g)?.map((part) => part.trim()).filter(Boolean) ?? [text]
+    const pending = sentences.map((sentence) =>
+      ask({ id: nextId++, text: sentence, voice: options.voice, speed: options.rate }),
+    )
+
+    void (async () => {
+      let started = false
+      for (const [index, request] of pending.entries()) {
+        const response = await request
+        if (currentId !== run) return
+        if (response.type !== 'audio') {
+          // Never leave the interviewer silent: the browser voice says the rest.
+          browserSpeech.speak(sentences.slice(index).join(' '), options)
+          return
+        }
+        if (!started) {
+          started = true
+          options.onStart()
+        }
+        await playSamples(response.samples, response.sampleRate)
+        if (currentId !== run) return
       }
-      const buffer = context.createBuffer(1, response.samples.length, response.sampleRate)
-      buffer.copyToChannel(response.samples as Float32Array<ArrayBuffer>, 0)
-      source = context.createBufferSource()
-      source.buffer = buffer
-      source.connect(context.destination)
-      source.onended = () => {
-        source = null
-        options.onEnd()
-      }
-      options.onStart()
-      source.start()
-    })
+      options.onEnd()
+    })()
   },
 
   stop() {

@@ -39,6 +39,11 @@ every slot. To contribute, add options to a list (or a new slot to a template) a
 open a pull request. Please write your own wording rather than copying prompts from
 books, courses or other sites.
 
+## Privacy and contributing
+
+See [PRIVACY.md](PRIVACY.md) for what is stored and what is sent to other services,
+and [CONTRIBUTING.md](CONTRIBUTING.md) for how to help.
+
 ## Licence
 
 MIT

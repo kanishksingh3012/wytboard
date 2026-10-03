@@ -1,6 +1,7 @@
 /*
- * The browser's speech engine exposes no audio levels, so this is a looping
- * animation shown while speech is playing rather than a true level meter.
+ * The looping animation is the fallback for the browser voice, which exposes no
+ * audio levels. With the natural voice, VoiceWave sets bar heights from the
+ * real audio and marks the wave data-live.
  */
 .voice-wave {
   display: inline-flex;
@@ -38,4 +39,9 @@
     animation: none;
     height: 60%;
   }
+}
+
+.voice-wave[data-active='true'][data-live='true'] > span {
+  animation: none;
+  transition: height 60ms linear;
 }

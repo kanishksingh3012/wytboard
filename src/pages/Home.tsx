@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } fro
 import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
 import { OptionSelect } from '../app/OptionSelect'
+import { ProgressSummary } from '../app/ProgressSummary'
 import { SetupGuide } from '../app/SetupGuide'
 import { ThemeToggle } from '../app/ThemeToggle'
 import { suggestChallenge } from '../challenges/generate'
@@ -14,6 +15,7 @@ import {
   createBoard,
   deleteBoard,
   exportBoard,
+  getTranscript,
   importBoard,
   listBoards,
   type BoardMeta,
@@ -52,6 +54,14 @@ export function Home() {
       event.preventDefault()
       void start(brief)
     }
+  }
+
+  // Starts a fresh board on the same problem, to compare attempts.
+  const retryBoard = async (board: BoardMeta) => {
+    // When the interviewer chose the problem, it is their first message.
+    const stated = (await getTranscript(board.id)).find((message) => message.role === 'assistant')
+    const copy = await createBoard(board.brief || stated?.content || '', board.session ?? session)
+    void navigate(`/board/${copy.id}`)
   }
 
   const fileInput = useRef<HTMLInputElement>(null)
@@ -180,6 +190,8 @@ export function Home() {
 
         {!llmConfigFrom(settings) && <SetupGuide />}
 
+        {boards && <ProgressSummary boards={boards} />}
+
         <section aria-labelledby="library-heading">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 id="library-heading" className="text-lg font-semibold tracking-tight">
@@ -264,12 +276,16 @@ export function Home() {
                         <Dropdown.Menu
                           onAction={(key) => {
                             if (key === 'open') void navigate(`/board/${board.id}`)
+                            if (key === 'retry') void retryBoard(board)
                             if (key === 'export') void downloadBoard(board)
                             if (key === 'delete') setPendingDelete(board)
                           }}
                         >
                           <Dropdown.Item id="open" textValue="Open">
                             <Label>Open</Label>
+                          </Dropdown.Item>
+                          <Dropdown.Item id="retry" textValue="Retry this problem">
+                            <Label>Retry this problem</Label>
                           </Dropdown.Item>
                           <Dropdown.Item id="export" textValue="Export">
                             <Label>Export</Label>

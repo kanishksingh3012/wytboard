@@ -31,8 +31,14 @@ function loadModel(): Promise<KokoroTTS> {
   return model
 }
 
-self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
-  const request = event.data
+// The model handles one request at a time, so requests are queued in order.
+let queue: Promise<void> = Promise.resolve()
+
+self.onmessage = (event: MessageEvent<WorkerRequest>) => {
+  queue = queue.then(() => handle(event.data))
+}
+
+async function handle(request: WorkerRequest) {
   try {
     const tts = await loadModel()
     if ('preload' in request) {

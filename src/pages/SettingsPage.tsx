@@ -356,6 +356,28 @@ export function SettingsPage() {
             </div>
           )}
         </Section>
+
+        <Section title="Privacy" description="What stays on this device and what is sent elsewhere.">
+          <ul className="text-muted list-disc space-y-2 pl-5 text-sm">
+            <li>
+              Your boards, transcripts, feedback, settings and API key are stored only in this
+              browser. Wytboard has no server and no accounts.
+            </li>
+            <li>
+              When you talk to the interviewer, your messages, the text on your board and an
+              image of the board are sent to the AI provider you chose, using your key. That
+              provider’s terms apply; some free tiers use your data to improve their models.
+            </li>
+            <li>
+              The microphone uses your browser’s speech recognition. Some browsers, including
+              Chrome, send the audio to their own servers to transcribe it.
+            </li>
+            <li>
+              The natural voice model is downloaded from Hugging Face once and then runs on this
+              device. Canvas fonts are loaded from a public CDN.
+            </li>
+          </ul>
+        </Section>
       </main>
     </div>
   )
