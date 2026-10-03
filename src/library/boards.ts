@@ -1,5 +1,6 @@
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { BinaryFiles } from '@excalidraw/excalidraw/types'
+import type { Feedback } from '../interviewer/feedback'
 import { getInterviewType, type SessionOptions } from '../interviewer/session'
 import { createStore, del, get, set, values } from 'idb-keyval'
 
@@ -13,6 +14,11 @@ export interface BoardMeta {
   updatedAt: number
   /** Chosen on the home screen; absent on boards made before these options existed. */
   session?: SessionOptions
+  /** When the interview was started and ended; the timer runs on wall-clock time. */
+  startedAt?: number
+  endedAt?: number
+  hintsUsed?: number
+  feedback?: Feedback
   /** Small JPEG data URL of the canvas, absent until something is drawn. */
   thumbnail?: string
 }
@@ -72,10 +78,18 @@ export function getBoardScene(id: string): Promise<BoardScene | undefined> {
   return get<BoardScene>(id, sceneStore)
 }
 
-export async function updateBoardMeta(id: string, patch: Partial<Omit<BoardMeta, 'id'>>) {
-  const meta = await getBoardMeta(id)
-  if (!meta) return
-  await set(id, { ...meta, ...patch }, metaStore)
+// Metadata updates are read-modify-write, so they run one at a time; otherwise an
+// autosave could overwrite a session update made at the same moment.
+let metaQueue: Promise<void> = Promise.resolve()
+
+export function updateBoardMeta(id: string, patch: Partial<Omit<BoardMeta, 'id'>>): Promise<void> {
+  metaQueue = metaQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const meta = await getBoardMeta(id)
+      if (meta) await set(id, { ...meta, ...patch }, metaStore)
+    })
+  return metaQueue
 }
 
 /**

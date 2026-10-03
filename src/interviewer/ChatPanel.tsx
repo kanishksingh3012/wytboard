@@ -1,5 +1,5 @@
 import { Button, Spinner, TextArea, Tooltip } from '@heroui/react'
-import { ChevronDown, ChevronUp, Mic, ScanEye, SendHorizontal, Square, Volume2, VolumeX } from 'lucide-react'
+import { ChevronDown, ChevronUp, Lightbulb, Mic, ScanEye, SendHorizontal, Square, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router'
 import { getTranscript, saveTranscript, type TranscriptMessage } from '../library/boards'
@@ -14,7 +14,8 @@ import {
 import { browserRecognition } from '../voice/recognition'
 import { browserSpeech } from '../voice/speech'
 import { avatarFor, getPersonality } from './personalities'
-import { OPENING_CUE, REVIEW_CUE, RULE_REMINDER, buildSystemPrompt } from './prompts'
+import { HINT_BUDGET } from './phases'
+import { HINT_CUE, OPENING_CUE, REVIEW_CUE, RULE_REMINDER, buildSystemPrompt } from './prompts'
 import { getInterviewType, type SessionOptions } from './session'
 import { VoiceWave } from './VoiceWave'
 
@@ -29,6 +30,11 @@ interface ChatPanelProps {
   /** Absent on boards made before session options existed; settings are used then. */
   session?: SessionOptions
   captureBoard: () => Promise<BoardCapture> | undefined
+  startedAt?: number
+  ended: boolean
+  hintsUsed: number
+  onStart: () => number
+  onHintUsed: () => void
 }
 
 /** The one board image kept in the conversation, and the turn it belongs to. */
@@ -38,7 +44,8 @@ interface SentSnapshot {
   image: string
 }
 
-export function ChatPanel({ boardId, brief, session: boardSession, captureBoard }: ChatPanelProps) {
+export function ChatPanel(props: ChatPanelProps) {
+  const { boardId, brief, session: boardSession, captureBoard } = props
   const settings = useSettings()
   const config = llmConfigFrom(settings)
   const session = boardSession ?? sessionDefaultsFrom(settings)
@@ -83,8 +90,13 @@ export function ChatPanel({ boardId, brief, session: boardSession, captureBoard 
     updateSettings({ voiceEnabled: !settings.voiceEnabled })
   }
 
-  const send = async (content: string, options: { hidden?: boolean; review?: boolean } = {}) => {
+  const send = async (
+    content: string,
+    options: { hidden?: boolean; review?: boolean; hint?: boolean } = {},
+  ) => {
     if (!config || !messages || busy) return
+    // The timer starts with the first turn.
+    const startedAt = props.startedAt ?? props.onStart()
     stopSpeaking()
 
     const userMessage: TranscriptMessage = {
@@ -111,7 +123,7 @@ export function ChatPanel({ boardId, brief, session: boardSession, captureBoard 
         : ''
 
       const buildRequest = (withImage: boolean): ChatMessage[] => [
-        { role: 'system', content: buildSystemPrompt({ ...session, brief }) },
+        { role: 'system', content: buildSystemPrompt({ ...session, brief, startedAt }) },
         ...history.map((message, index): ChatMessage => {
           const isLast = index === history.length - 1
           const text = isLast ? `${message.content}${boardText}\n\n${RULE_REMINDER}` : message.content
@@ -152,6 +164,7 @@ export function ChatPanel({ boardId, brief, session: boardSession, captureBoard 
         })
       }
       await saveTranscript(boardId, next)
+      if (options.hint) props.onHintUsed()
     } catch (cause) {
       // Drop the unanswered turn so the user can retry without duplicates.
       setMessages(messages)
@@ -324,7 +337,13 @@ export function ChatPanel({ boardId, brief, session: boardSession, captureBoard 
         )}
       </div>
 
-      {config && started && (
+      {config && started && props.ended && (
+        <p className="border-separator text-muted border-t px-4 py-3 text-sm">
+          This session has ended. The transcript is kept with the board.
+        </p>
+      )}
+
+      {config && started && !props.ended && (
         <div className="border-separator border-t p-2">
           <div className="flex items-end gap-2">
             <TextArea
@@ -371,6 +390,18 @@ export function ChatPanel({ boardId, brief, session: boardSession, captureBoard 
             <ScanEye className="size-4" />
             Review my board
           </Button>
+          {session.mode === 'practice' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mt-1"
+              isDisabled={busy || recording || props.hintsUsed >= HINT_BUDGET}
+              onPress={() => void send(HINT_CUE, { hint: true })}
+            >
+              <Lightbulb className="size-4" />
+              Hint ({HINT_BUDGET - props.hintsUsed} left)
+            </Button>
+          )}
         </div>
       )}
     </aside>

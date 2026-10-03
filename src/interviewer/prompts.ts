@@ -1,4 +1,5 @@
 import { getPersonality } from './personalities'
+import { timeContext } from './phases'
 import { getInterviewType, type SessionMode, type SessionOptions } from './session'
 
 const CORE = `You are a senior product designer running a whiteboard design interview.
@@ -39,7 +40,7 @@ Go no further than that.`,
 Give the smallest nudge that works, in this order, one step at a time:
 1. Ask what they are trying to decide.
 2. Point at a gap as a question ("Who else is affected by this?").
-3. Name the area to think about, never the content.`,
+3. Only when they explicitly ask for a hint: name the area to think about, never the content.`,
 }
 
 /** Sent with every user turn, because smaller models drift from the system prompt. */
@@ -50,9 +51,14 @@ export const RULE_REMINDER =
 /** Sent when the user presses "Review my board". */
 export const REVIEW_CUE = 'Please take a look at my board.'
 
+/** Sent when the user spends one of their practice-mode hints. */
+export const HINT_CUE = 'I am stuck and would like a hint.'
+
 export const OPENING_CUE = 'The candidate has joined and is ready. Open the interview.'
 
-export function buildSystemPrompt(options: SessionOptions & { brief: string }): string {
+export function buildSystemPrompt(
+  options: SessionOptions & { brief: string; startedAt?: number },
+): string {
   const personality = getPersonality(options.personality)
   const type = getInterviewType(options.interviewType)
 
@@ -69,6 +75,7 @@ export function buildSystemPrompt(options: SessionOptions & { brief: string }): 
     STUCK[options.mode],
     `Your name is ${personality.name}. ${personality.prompt}`,
     `${type.prompt}\nThe session is planned for ${options.durationMin} minutes.`,
+    ...(options.startedAt ? [timeContext(options.startedAt, options.durationMin)] : []),
     problem,
   ].join('\n\n')
 }

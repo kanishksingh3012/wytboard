@@ -34,8 +34,9 @@ Keep these areas separate so each can be swapped without touching the others:
   snapshot export and change detection for the interviewer.
 - `src/llm/`: one OpenAI-compatible chat client plus provider presets (Gemini, Groq,
   OpenRouter, custom URL). No provider-specific code outside this folder.
-- `src/interviewer/`: prompts, personalities, the chat panel. Later: session
-  state, timer, hint budget.
+- `src/interviewer/`: prompts, personalities, the chat panel, session bar (timer and
+  phases), hint budget and end-of-session feedback. Session timing, hints used and
+  feedback are stored on `BoardMeta`.
 - `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.

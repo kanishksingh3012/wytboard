@@ -5,10 +5,16 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { useTheme } from '../app/useTheme'
 import { Board, type BoardHandle, type SaveState } from '../canvas/Board'
 import { ChatPanel } from '../interviewer/ChatPanel'
+import { generateFeedback } from '../interviewer/feedback'
+import { FeedbackDialog } from '../interviewer/FeedbackDialog'
+import { SessionBar } from '../interviewer/SessionBar'
+import { llmConfigFrom, sessionDefaultsFrom, useSettings } from '../settings/settings'
 import {
   getBoardMeta,
   getBoardScene,
+  getTranscript,
   renameBoard,
+  updateBoardMeta,
   type BoardMeta,
   type BoardScene,
 } from '../library/boards'
@@ -30,6 +36,10 @@ export function BoardPage() {
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const [title, setTitle] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
+  const settings = useSettings()
+  const [ending, setEnding] = useState(false)
+  const [endError, setEndError] = useState('')
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -72,6 +82,47 @@ export function BoardPage() {
     )
   }
 
+  const { meta } = loaded
+  const durationMin = (meta.session ?? sessionDefaultsFrom(settings)).durationMin
+
+  // Keeps the stored board and the screen in step.
+  const patchMeta = (patch: Partial<BoardMeta>) => {
+    setLoaded({ ...loaded, meta: { ...meta, ...patch } })
+    void updateBoardMeta(id, patch)
+  }
+
+  const startSession = () => {
+    const startedAt = Date.now()
+    patchMeta({ startedAt })
+    return startedAt
+  }
+
+  // Stops the clock, then asks the model to score the session.
+  const endSession = async () => {
+    const config = llmConfigFrom(settings)
+    if (!config || !meta.startedAt) return
+    const endedAt = meta.endedAt ?? Date.now()
+    patchMeta({ endedAt })
+    setEnding(true)
+    setEndError('')
+    try {
+      await boardRef.current?.flush()
+      const feedback = await generateFeedback(config, {
+        brief: meta.brief,
+        transcript: await getTranscript(id),
+        board: await boardRef.current?.capture(),
+        minutes: Math.max(1, Math.round((endedAt - meta.startedAt) / 60_000)),
+      })
+      setLoaded({ ...loaded, meta: { ...meta, endedAt, feedback } })
+      void updateBoardMeta(id, { feedback })
+      setFeedbackOpen(true)
+    } catch (cause) {
+      setEndError(cause instanceof Error ? cause.message : 'Could not get feedback.')
+    } finally {
+      setEnding(false)
+    }
+  }
+
   const goHome = async () => {
     // Wait for the save so the library shows the latest thumbnail.
     await boardRef.current?.flush()
@@ -80,7 +131,7 @@ export function BoardPage() {
 
   const commitTitle = async () => {
     setEditingTitle(false)
-    const next = title.trim() || loaded.meta.title
+    const next = title.trim() || meta.title
     setTitle(next)
     await renameBoard(id, next)
   }
@@ -141,6 +192,38 @@ export function BoardPage() {
         brief={loaded.meta.brief}
         session={loaded.meta.session}
         captureBoard={() => boardRef.current?.capture()}
+        startedAt={meta.startedAt}
+        ended={meta.endedAt !== undefined}
+        hintsUsed={meta.hintsUsed ?? 0}
+        onStart={startSession}
+        onHintUsed={() => patchMeta({ hintsUsed: (meta.hintsUsed ?? 0) + 1 })}
+      />
+
+      {meta.startedAt && (
+        <SessionBar
+          startedAt={meta.startedAt}
+          endedAt={meta.endedAt}
+          durationMin={durationMin}
+          hasFeedback={meta.feedback !== undefined}
+          ending={ending}
+          onEnd={() => void endSession()}
+          onShowFeedback={() => setFeedbackOpen(true)}
+        />
+      )}
+
+      {endError && (
+        <p
+          role="alert"
+          className="bg-surface shadow-float text-danger absolute bottom-24 left-1/2 z-10 max-w-md -translate-x-1/2 rounded-xl px-4 py-2 text-sm"
+        >
+          {endError}
+        </p>
+      )}
+
+      <FeedbackDialog
+        feedback={meta.feedback ?? null}
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
       />
     </div>
   )
