@@ -1,0 +1,56 @@
+/*
+ * Wytboard theme tokens. These override HeroUI's defaults; components must use
+ * these tokens (or the Tailwind utilities built on them) and never hard-code
+ * colours, radii or shadows.
+ */
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --shadow-float: var(--float-shadow);
+}
+
+:root {
+  --radius: 0.875rem;
+}
+
+:root,
+.light,
+[data-theme="light"] {
+  --accent: oklch(0.56 0.095 196);
+  --accent-foreground: var(--snow);
+
+  --background: oklch(0.978 0.006 215);
+  --muted: oklch(0.52 0.02 230);
+  --border: oklch(0.91 0.01 220);
+  --separator: oklch(0.93 0.008 220);
+
+  /* Dots of the notebook grid behind the canvas */
+  --canvas-dot: oklch(0.82 0.015 220);
+
+  /* Shadow for panels that float over the canvas */
+  --float-shadow:
+    0 1px 2px 0 oklch(0.4 0.03 220 / 0.06), 0 6px 20px -4px oklch(0.4 0.03 220 / 0.12);
+}
+
+.dark,
+[data-theme="dark"] {
+  --accent: oklch(0.74 0.11 192);
+  --accent-foreground: var(--eclipse);
+
+  --background: oklch(0.17 0.012 230);
+  --surface: oklch(0.23 0.014 230);
+  --overlay: oklch(0.25 0.014 230);
+  --muted: oklch(0.72 0.018 225);
+  --border: oklch(0.31 0.014 230);
+  --separator: oklch(0.29 0.012 230);
+
+  --canvas-dot: oklch(0.36 0.015 230);
+
+  --float-shadow: 0 0 0 1px oklch(1 0 0 / 0.06), 0 8px 24px -6px oklch(0 0 0 / 0.5);
+}
+
+.dot-grid {
+  background-color: var(--background);
+  background-image: radial-gradient(circle, var(--canvas-dot) 1.1px, transparent 1.6px);
+  background-size: 24px 24px;
+}
