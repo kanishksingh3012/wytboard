@@ -16,7 +16,9 @@ browser too.
   spoken to (in browsers with speech recognition), a session timer with suggested
   phases, practice-mode hints, an end-of-session feedback scorecard, and an optional
   natural voice (the open-source Kokoro model, running in your browser).
-- Not built yet: tablet testing; export and import of boards.
+- Boards live in the browser they were made in. Use Export on a board and "Import
+  board" on the home screen to move one to another device.
+- Not done yet: tablet testing.
 
 ## Run it locally
 

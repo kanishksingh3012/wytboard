@@ -1,6 +1,6 @@
 import { AlertDialog, Button, Dropdown, Label, TextArea } from '@heroui/react'
-import { ArrowRight, Dices, Ellipsis, Settings, SquarePen } from 'lucide-react'
-import { useEffect, useState, type KeyboardEvent } from 'react'
+import { ArrowRight, Dices, Ellipsis, Settings, SquarePen, Upload } from 'lucide-react'
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
 import { OptionSelect } from '../app/OptionSelect'
@@ -10,7 +10,14 @@ import { suggestChallenge } from '../challenges/generate'
 import { PERSONALITIES } from '../interviewer/personalities'
 import { DURATIONS, INTERVIEW_TYPES, MODES, type SessionOptions } from '../interviewer/session'
 import { llmConfigFrom, sessionDefaultsFrom, updateSettings, useSettings } from '../settings/settings'
-import { createBoard, deleteBoard, listBoards, type BoardMeta } from '../library/boards'
+import {
+  createBoard,
+  deleteBoard,
+  exportBoard,
+  importBoard,
+  listBoards,
+  type BoardMeta,
+} from '../library/boards'
 
 function formatEdited(timestamp: number): string {
   const date = new Date(timestamp)
@@ -44,6 +51,40 @@ export function Home() {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       void start(brief)
+    }
+  }
+
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [importError, setImportError] = useState('')
+
+  // Saves the board, its drawing and its transcript as one file.
+  const downloadBoard = async (board: BoardMeta) => {
+    const file = await exportBoard(board.id)
+    if (!file) return
+    const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${board.title.replace(/[^\w -]+/g, '').trim() || 'board'}.wytboard.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setImportError('')
+    try {
+      await importBoard(JSON.parse(await file.text()))
+      setBoards(await listBoards())
+    } catch (cause) {
+      setImportError(
+        cause instanceof SyntaxError
+          ? 'This file could not be read as a board.'
+          : cause instanceof Error
+            ? cause.message
+            : 'Import failed.',
+      )
     }
   }
 
@@ -144,16 +185,37 @@ export function Home() {
             <h2 id="library-heading" className="text-lg font-semibold tracking-tight">
               Your boards
             </h2>
-            {boards && boards.length > 0 && (
-              <span className="text-muted text-sm">
-                {boards.length} {boards.length === 1 ? 'board' : 'boards'}
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {boards && boards.length > 0 && (
+                <span className="text-muted text-sm">
+                  {boards.length} {boards.length === 1 ? 'board' : 'boards'}
+                </span>
+              )}
+              <Button size="sm" variant="tertiary" onPress={() => fileInput.current?.click()}>
+                <Upload className="size-4" />
+                Import board
+              </Button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                aria-label="Import a board file"
+                onChange={(event) => void onImport(event)}
+              />
+            </div>
           </div>
+
+          {importError && (
+            <p role="alert" className="text-danger mb-4 text-sm">
+              {importError}
+            </p>
+          )}
 
           {boards?.length === 0 && (
             <div className="border-border text-muted rounded-3xl border border-dashed px-6 py-12 text-center text-sm">
-              No boards yet. Boards you start are saved here automatically.
+              No boards yet. Boards you start are saved here automatically, and you can import a
+              board exported from another device.
             </div>
           )}
 
@@ -202,11 +264,15 @@ export function Home() {
                         <Dropdown.Menu
                           onAction={(key) => {
                             if (key === 'open') void navigate(`/board/${board.id}`)
+                            if (key === 'export') void downloadBoard(board)
                             if (key === 'delete') setPendingDelete(board)
                           }}
                         >
                           <Dropdown.Item id="open" textValue="Open">
                             <Label>Open</Label>
+                          </Dropdown.Item>
+                          <Dropdown.Item id="export" textValue="Export">
+                            <Label>Export</Label>
                           </Dropdown.Item>
                           <Dropdown.Item id="delete" textValue="Delete" variant="danger">
                             <Label>Delete</Label>

@@ -121,3 +121,38 @@ export async function getTranscript(id: string): Promise<TranscriptMessage[]> {
 export function saveTranscript(id: string, messages: TranscriptMessage[]) {
   return set(id, messages, transcriptStore)
 }
+
+/** A board with everything needed to recreate it in another browser. */
+export interface BoardFile {
+  format: 'wytboard'
+  version: 1
+  meta: BoardMeta
+  scene?: BoardScene
+  transcript: TranscriptMessage[]
+}
+
+export async function exportBoard(id: string): Promise<BoardFile | undefined> {
+  const meta = await getBoardMeta(id)
+  if (!meta) return undefined
+  return {
+    format: 'wytboard',
+    version: 1,
+    meta,
+    scene: await getBoardScene(id),
+    transcript: await getTranscript(id),
+  }
+}
+
+/** Adds a board from an exported file. It gets a new id, so nothing is overwritten. */
+export async function importBoard(data: unknown): Promise<BoardMeta> {
+  const file = data as Partial<BoardFile> | null
+  if (file?.format !== 'wytboard' || file.version !== 1 || typeof file.meta?.title !== 'string') {
+    throw new Error('This is not a Wytboard board file.')
+  }
+
+  const meta: BoardMeta = { ...file.meta, id: crypto.randomUUID(), updatedAt: Date.now() }
+  await set(meta.id, meta, metaStore)
+  if (file.scene && Array.isArray(file.scene.elements)) await set(meta.id, file.scene, sceneStore)
+  if (Array.isArray(file.transcript)) await set(meta.id, file.transcript, transcriptStore)
+  return meta
+}
