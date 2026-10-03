@@ -1,7 +1,7 @@
 import { createAvatar } from '@dicebear/core'
 import * as lorelei from '@dicebear/lorelei'
 
-export type PersonalityId = 'friendly' | 'sceptical' | 'quiet'
+export type PersonalityId = 'friendly' | 'sceptical' | 'quiet' | 'curious'
 
 export interface Personality {
   id: PersonalityId
@@ -50,6 +50,17 @@ export const PERSONALITIES: Personality[] = [
       'sentence, and ask follow-up questions only when something important is unclear.',
     voice: { rate: 0.92, pitch: 1 },
     avatar: { hair: 'variant15', beard: false },
+  },
+  {
+    id: 'curious',
+    name: 'Daniel',
+    label: 'Curious',
+    description: 'Easy-going and inquisitive; asks lots of open "why" questions.',
+    prompt:
+      'Personality: easy-going and curious. Ask open "why" and "what if" questions about ' +
+      'the reasoning behind each choice, without steering towards any answer.',
+    voice: { rate: 1, pitch: 0.95 },
+    avatar: { hair: 'variant03', beard: false },
   },
 ]
 
