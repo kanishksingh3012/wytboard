@@ -17,7 +17,7 @@ import { getInterviewType, type SessionOptions } from './session'
 import { VoiceWave } from './VoiceWave'
 
 /** Caps reply length so the interviewer cannot produce a full solution. */
-const MAX_REPLY_TOKENS = 500
+const MAX_REPLY_TOKENS = 800
 /** Below this width the panel starts collapsed so it does not cover the canvas. */
 const COLLAPSE_BELOW_PX = 900
 

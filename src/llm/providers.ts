@@ -7,6 +7,8 @@ export interface Provider {
   baseUrl: string
   /** Page where the user can create an API key. */
   keyUrl?: string
+  /** Extra request fields this provider needs. */
+  extraBody?: Record<string, unknown>
 }
 
 export const PROVIDERS: Provider[] = [
@@ -15,6 +17,9 @@ export const PROVIDERS: Provider[] = [
     label: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     keyUrl: 'https://aistudio.google.com/apikey',
+    // Gemini counts its hidden reasoning against max_tokens; without this, short
+    // reply caps cut answers off mid-sentence.
+    extraBody: { reasoning_effort: 'low' },
   },
   {
     id: 'groq',

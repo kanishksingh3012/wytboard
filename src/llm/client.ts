@@ -3,6 +3,8 @@ export interface LlmConfig {
   baseUrl: string
   apiKey: string
   model: string
+  /** Provider-specific request fields, merged into the chat request body. */
+  extraBody?: Record<string, unknown>
 }
 
 export interface ChatMessage {
@@ -77,6 +79,7 @@ export async function chat(
       model: config.model,
       messages,
       ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+      ...config.extraBody,
     }),
   })
 
@@ -85,7 +88,13 @@ export async function chat(
   if (typeof content !== 'string' || !content.trim()) {
     throw new LlmError('The model returned an empty reply.')
   }
-  return content.trim()
+  const reply = content.trim()
+  // A reply that hit the token cap ends mid-sentence; keep only the complete sentences.
+  if (body.choices[0].finish_reason === 'length') {
+    const complete = reply.match(/^[\s\S]*[.?!]/)?.[0]
+    if (complete) return complete
+  }
+  return reply
 }
 
 export async function listModels(config: Omit<LlmConfig, 'model'>): Promise<string[]> {

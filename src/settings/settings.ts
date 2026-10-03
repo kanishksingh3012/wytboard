@@ -77,7 +77,8 @@ export function llmConfigFrom(settings: Settings): LlmConfig | null {
   const model = settings.models[settings.provider]?.trim() ?? ''
   // A custom URL may be a local server that takes no key.
   const keyOk = settings.provider === 'custom' || apiKey !== ''
-  return baseUrl && model && keyOk ? { baseUrl, apiKey, model } : null
+  const { extraBody } = getProvider(settings.provider)
+  return baseUrl && model && keyOk ? { baseUrl, apiKey, model, extraBody } : null
 }
 
 export function sessionDefaultsFrom(settings: Settings): SessionOptions {
