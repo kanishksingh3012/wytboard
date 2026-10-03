@@ -1,10 +1,11 @@
 import { AlertDialog, Button, Dropdown, Label, TextArea } from '@heroui/react'
-import { ArrowRight, Ellipsis, Settings, SquarePen } from 'lucide-react'
+import { ArrowRight, Dices, Ellipsis, Settings, SquarePen } from 'lucide-react'
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
 import { OptionSelect } from '../app/OptionSelect'
 import { ThemeToggle } from '../app/ThemeToggle'
+import { suggestChallenge } from '../challenges/generate'
 import { PERSONALITIES } from '../interviewer/personalities'
 import { DURATIONS, INTERVIEW_TYPES, MODES, type SessionOptions } from '../interviewer/session'
 import { sessionDefaultsFrom, updateSettings, useSettings } from '../settings/settings'
@@ -114,10 +115,19 @@ export function Home() {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-2">
-              <Button variant="ghost" onPress={() => void start('')}>
-                <SquarePen className="size-4" />
-                Blank board
-              </Button>
+              <div className="flex flex-wrap items-center gap-1">
+                <Button variant="ghost" onPress={() => void start('')}>
+                  <SquarePen className="size-4" />
+                  Blank board
+                </Button>
+                <Button
+                  variant="ghost"
+                  onPress={() => setBrief(suggestChallenge(session.interviewType))}
+                >
+                  <Dices className="size-4" />
+                  Suggest a challenge
+                </Button>
+              </div>
               <Button variant="primary" onPress={() => void start(brief)}>
                 Start practising
                 <ArrowRight className="size-4" />

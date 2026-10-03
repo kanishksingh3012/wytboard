@@ -21,9 +21,6 @@ import { VoiceWave } from './VoiceWave'
 
 /** Caps reply length so the interviewer cannot produce a full solution. */
 const MAX_REPLY_TOKENS = 800
-/** Below this width the panel starts collapsed so it does not cover the canvas. */
-const COLLAPSE_BELOW_PX = 900
-
 interface ChatPanelProps {
   boardId: string
   brief: string
@@ -52,7 +49,7 @@ export function ChatPanel(props: ChatPanelProps) {
   const personality = getPersonality(session.personality)
   const avatar = avatarFor(session.personality)
 
-  const [open, setOpen] = useState(() => window.innerWidth >= COLLAPSE_BELOW_PX)
+  const [open, setOpen] = useState(true)
   const [messages, setMessages] = useState<TranscriptMessage[] | null>(null)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)

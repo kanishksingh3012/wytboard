@@ -37,6 +37,8 @@ Keep these areas separate so each can be swapped without touching the others:
 - `src/interviewer/`: prompts, personalities, the chat panel, session bar (timer and
   phases), hint budget and end-of-session feedback. Session timing, hints used and
   feedback are stored on `BoardMeta`.
+- `src/challenges/`: `challenges.json`, the community-editable bank of building blocks,
+  and the generator behind "Suggest a challenge". All wording must be original.
 - `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.
@@ -52,6 +54,7 @@ Keep these areas separate so each can be swapped without touching the others:
   duration and mode. They are stored on each board (`BoardMeta.session`).
 - The interviewer panel is a character card: illustrated avatar (DiceBear Lorelei,
   generated locally), name, status and a voice wave that moves while speaking.
+- The interviewer panel is open by default on every screen size.
 - On a board, the drawing toolbar is at the bottom-centre and the interviewer
   panel is at the top-right. Excalidraw has no option for a bottom toolbar, so
   `src/canvas/board.css` repositions it; re-check that file when upgrading Excalidraw.

@@ -1,0 +1,122 @@
+{
+  "new-product": {
+    "template": "Design {product} for {audience}. {constraint}",
+    "product": [
+      "a meal-planning app",
+      "a way to book and pay for local services",
+      "a habit-tracking product",
+      "a tool for splitting shared household costs",
+      "a medication reminder service",
+      "a way to find and join local sports games",
+      "a language-learning product",
+      "a marketplace for second-hand furniture",
+      "a personal budgeting tool",
+      "a way to plan group trips"
+    ],
+    "audience": [
+      "first-year university students",
+      "adults over 70 living alone",
+      "parents of newborns",
+      "long-distance truck drivers",
+      "people who have just moved to a new country",
+      "small shop owners with no technical background",
+      "night-shift hospital staff",
+      "teenagers",
+      "freelancers with irregular income",
+      "people recovering from surgery at home"
+    ],
+    "constraint": [
+      "It must work with a poor internet connection.",
+      "The first version has to ship in three months.",
+      "It must be usable with one hand.",
+      "It cannot require creating an account.",
+      "It must work on a smartwatch as well as a phone.",
+      "The business needs it to make money from day one.",
+      "Most users will only open it once a week.",
+      "It must be usable by people with low vision."
+    ]
+  },
+  "improve-product": {
+    "template": "Improve {area} in {product}. {goal}",
+    "area": [
+      "the onboarding",
+      "the checkout flow",
+      "search and filtering",
+      "notifications",
+      "the cancellation and refund experience",
+      "sharing with friends",
+      "the home screen",
+      "the reviews and ratings system"
+    ],
+    "product": [
+      "a food delivery app",
+      "a music streaming service",
+      "a ride-hailing app",
+      "an online banking app",
+      "a video-calling tool",
+      "a hotel booking site",
+      "a fitness tracking app",
+      "an online grocery store",
+      "a job search platform"
+    ],
+    "goal": [
+      "The goal is to reduce the number of people who give up halfway.",
+      "The goal is to bring back users who stopped using it.",
+      "The goal is to make it work better for first-time users.",
+      "The goal is to reduce support requests.",
+      "The goal is to increase how often people use it each week.",
+      "The goal is to build more trust with new users."
+    ]
+  },
+  "abstract": {
+    "template": "Design {object} for {user}.",
+    "object": [
+      "an ATM",
+      "an alarm clock",
+      "a lift control panel",
+      "a vending machine",
+      "a TV remote",
+      "a library",
+      "a parking meter",
+      "a kitchen timer",
+      "an airport check-in kiosk",
+      "a thermostat"
+    ],
+    "user": [
+      "children aged six to eight",
+      "people who cannot see",
+      "astronauts on a space station",
+      "people who cannot read",
+      "a busy restaurant kitchen",
+      "someone wearing thick gloves",
+      "a town with unreliable electricity",
+      "people in a hurry who use it only once",
+      "users who speak ten different languages",
+      "people with memory loss"
+    ]
+  },
+  "company-feature": {
+    "template": "Design {feature} for {company}.",
+    "feature": [
+      "a loyalty programme",
+      "a way for customers to get help without calling support",
+      "a referral feature",
+      "a dashboard that shows customers their own usage",
+      "a group or family plan",
+      "a feature that helps customers compare options",
+      "a way to pause instead of cancel a subscription",
+      "an accessibility mode"
+    ],
+    "company": [
+      "a fintech start-up that offers small-business loans",
+      "an online pharmacy",
+      "a budget airline",
+      "an electric scooter rental company",
+      "a telehealth provider",
+      "an online learning platform for professionals",
+      "a grocery delivery company",
+      "a property rental marketplace",
+      "a company that sells home solar panels"
+    ]
+  }
+}
