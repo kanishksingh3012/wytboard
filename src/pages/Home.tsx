@@ -4,11 +4,12 @@ import { useEffect, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
 import { OptionSelect } from '../app/OptionSelect'
+import { SetupGuide } from '../app/SetupGuide'
 import { ThemeToggle } from '../app/ThemeToggle'
 import { suggestChallenge } from '../challenges/generate'
 import { PERSONALITIES } from '../interviewer/personalities'
 import { DURATIONS, INTERVIEW_TYPES, MODES, type SessionOptions } from '../interviewer/session'
-import { sessionDefaultsFrom, updateSettings, useSettings } from '../settings/settings'
+import { llmConfigFrom, sessionDefaultsFrom, updateSettings, useSettings } from '../settings/settings'
 import { createBoard, deleteBoard, listBoards, type BoardMeta } from '../library/boards'
 
 function formatEdited(timestamp: number): string {
@@ -135,6 +136,8 @@ export function Home() {
             </div>
           </div>
         </section>
+
+        {!llmConfigFrom(settings) && <SetupGuide />}
 
         <section aria-labelledby="library-heading">
           <div className="mb-4 flex items-baseline justify-between">

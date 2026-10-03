@@ -203,7 +203,9 @@ export function SettingsPage() {
               ))}
             </datalist>
             <Description>
-              Choose a model that accepts images, so the interviewer can read your board.
+              Choose a model that accepts images, so the interviewer can read your board. For
+              Gemini, pick the newest “flash” model; avoid names with “pro”, “tts”, “image”,
+              “live” or “embedding”.
             </Description>
           </TextField>
 
