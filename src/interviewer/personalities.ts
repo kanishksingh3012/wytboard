@@ -13,6 +13,8 @@ export interface Personality {
   prompt: string
   /** Speech tuning so each interviewer sounds a little different. */
   voice: { rate: number; pitch: number }
+  /** Fixed avatar features, so the picture matches the character. */
+  avatar: { hair: string; beard: boolean }
 }
 
 export const PERSONALITIES: Personality[] = [
@@ -25,6 +27,7 @@ export const PERSONALITIES: Personality[] = [
       'Personality: warm and relaxed. Put the candidate at ease with your tone, ' +
       'but stay neutral about the quality of their ideas.',
     voice: { rate: 1, pitch: 1.1 },
+    avatar: { hair: 'variant35', beard: false },
   },
   {
     id: 'sceptical',
@@ -35,6 +38,7 @@ export const PERSONALITIES: Personality[] = [
       'Personality: sceptical and direct. Question assumptions, ask for evidence ' +
       'and for the trade-offs behind each decision. Never be rude.',
     voice: { rate: 1.05, pitch: 0.9 },
+    avatar: { hair: 'variant08', beard: true },
   },
   {
     id: 'quiet',
@@ -45,6 +49,7 @@ export const PERSONALITIES: Personality[] = [
       'Personality: quiet. Use the fewest words possible, often a single short ' +
       'sentence, and ask follow-up questions only when something important is unclear.',
     voice: { rate: 0.92, pitch: 1 },
+    avatar: { hair: 'variant15', beard: false },
   },
 ]
 
@@ -58,7 +63,12 @@ const avatarCache = new Map<PersonalityId, string>()
 export function avatarFor(id: PersonalityId): string {
   let uri = avatarCache.get(id)
   if (!uri) {
-    uri = createAvatar(lorelei, { seed: getPersonality(id).name }).toDataUri()
+    const { name, avatar } = getPersonality(id)
+    uri = createAvatar(lorelei, {
+      seed: name,
+      hair: [avatar.hair as NonNullable<lorelei.Options['hair']>[number]],
+      beardProbability: avatar.beard ? 100 : 0,
+    }).toDataUri()
     avatarCache.set(id, uri)
   }
   return uri

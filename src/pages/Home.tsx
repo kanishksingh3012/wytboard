@@ -66,7 +66,7 @@ export function Home() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 pb-20">
-        <section className="mx-auto max-w-3xl pt-[7vh] pb-14">
+        <section className="pt-[7vh] pb-14">
           <h1 className="text-center text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             What do you want to practise today?
           </h1>
@@ -169,13 +169,13 @@ export function Home() {
                         </div>
                       )}
                     </div>
-                    <div className="py-3 pr-12 pl-4">
+                    <div className="pt-3.5 pr-12 pb-5 pl-5">
                       <p className="truncate text-sm font-medium">{board.title}</p>
                       <p className="text-muted mt-0.5 text-xs">{formatEdited(board.updatedAt)}</p>
                     </div>
                   </button>
 
-                  <div className="absolute right-2 bottom-2.5">
+                  <div className="absolute right-3 bottom-4">
                     <Dropdown>
                       <Button
                         isIconOnly
