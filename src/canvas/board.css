@@ -1,0 +1,23 @@
+/* Match Excalidraw's own UI to the Wytboard theme tokens. */
+.board .excalidraw {
+  --color-primary: var(--accent);
+  --color-primary-darker: color-mix(in oklab, var(--accent) 88%, black);
+  --color-primary-darkest: color-mix(in oklab, var(--accent) 76%, black);
+  --color-primary-light: color-mix(in oklab, var(--accent) 18%, var(--surface));
+  --color-primary-light-darker: color-mix(in oklab, var(--accent) 28%, var(--surface));
+  --color-surface-primary-container: color-mix(in oklab, var(--accent) 18%, var(--surface));
+  --ui-font: var(--font-sans);
+  --border-radius-lg: var(--radius);
+}
+
+.board .excalidraw,
+.board .excalidraw.theme--dark {
+  --island-bg-color: var(--surface);
+  --popup-bg-color: var(--overlay);
+  --color-slider-track: color-mix(in oklab, var(--accent) 45%, var(--surface));
+}
+
+/* Excalidraw's shape-library button would be confused with Wytboard's own board library. */
+.board .excalidraw .default-sidebar-trigger {
+  display: none;
+}
