@@ -1,5 +1,6 @@
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { BinaryFiles } from '@excalidraw/excalidraw/types'
+import { getInterviewType, type SessionOptions } from '../interviewer/session'
 import { createStore, del, get, set, values } from 'idb-keyval'
 
 /** What the home screen needs to list a board without loading its canvas. */
@@ -10,6 +11,8 @@ export interface BoardMeta {
   brief: string
   createdAt: number
   updatedAt: number
+  /** Chosen on the home screen; absent on boards made before these options existed. */
+  session?: SessionOptions
   /** Small JPEG data URL of the canvas, absent until something is drawn. */
   thumbnail?: string
 }
@@ -36,9 +39,9 @@ const transcriptStore = createStore('wytboard-board-transcripts', 'transcripts')
 const UNTITLED = 'Untitled board'
 const TITLE_MAX = 60
 
-function titleFromBrief(brief: string): string {
+function titleFromBrief(brief: string, session?: SessionOptions): string {
   const firstLine = brief.trim().split('\n')[0] ?? ''
-  if (!firstLine) return UNTITLED
+  if (!firstLine) return session ? getInterviewType(session.interviewType).label : UNTITLED
   return firstLine.length > TITLE_MAX ? `${firstLine.slice(0, TITLE_MAX - 1).trimEnd()}…` : firstLine
 }
 
@@ -47,12 +50,13 @@ export async function listBoards(): Promise<BoardMeta[]> {
   return boards.sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
-export async function createBoard(brief: string): Promise<BoardMeta> {
+export async function createBoard(brief: string, session?: SessionOptions): Promise<BoardMeta> {
   const now = Date.now()
   const meta: BoardMeta = {
     id: crypto.randomUUID(),
-    title: titleFromBrief(brief),
+    title: titleFromBrief(brief, session),
     brief: brief.trim(),
+    session,
     createdAt: now,
     updatedAt: now,
   }

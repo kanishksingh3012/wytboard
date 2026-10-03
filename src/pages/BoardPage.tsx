@@ -136,7 +136,7 @@ export function BoardPage() {
         </span>
       </div>
 
-      <ChatPanel boardId={id} brief={loaded.meta.brief} />
+      <ChatPanel boardId={id} brief={loaded.meta.brief} session={loaded.meta.session} />
     </div>
   )
 }

@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
 import { ThemeToggle } from '../app/ThemeToggle'
 import { PERSONALITIES, type PersonalityId } from '../interviewer/personalities'
-import type { SessionMode } from '../interviewer/prompts'
+import { MODES, type SessionMode } from '../interviewer/session'
 import { chat, listModels } from '../llm/client'
 import { PROVIDERS, getProvider, type ProviderId } from '../llm/providers'
 import { baseUrlFor, llmConfigFrom, updateSettings, useSettings } from '../settings/settings'
@@ -23,19 +23,6 @@ import { baseUrlFor, llmConfigFrom, updateSettings, useSettings } from '../setti
 type Status = { kind: 'idle' | 'busy' | 'ok' | 'error'; text: string }
 
 const IDLE: Status = { kind: 'idle', text: '' }
-
-const MODES: { id: SessionMode; label: string; description: string }[] = [
-  {
-    id: 'interview',
-    label: 'Interview',
-    description: 'Realistic: the interviewer answers clarifying questions and gives no hints.',
-  },
-  {
-    id: 'practice',
-    label: 'Practice',
-    description: 'When you are stuck, the interviewer may name an area to think about.',
-  },
-]
 
 function Section(props: { title: string; description: string; children: ReactNode }) {
   return (
@@ -99,7 +86,7 @@ export function SettingsPage() {
   const canLoadModels = baseUrl !== '' && (settings.provider === 'custom' || apiKey.trim() !== '')
 
   return (
-    <div className="dot-grid h-full overflow-y-auto">
+    <div className="bg-background h-full overflow-y-auto">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
         <Brand />
         <ThemeToggle />
@@ -245,7 +232,7 @@ export function SettingsPage() {
 
         <Section
           title="Interviewer"
-          description="How the interviewer behaves in new messages. You can change this at any time."
+          description="Defaults for new boards. You can change them on the home screen each time you start."
         >
           <RadioGroup
             variant="secondary"
@@ -259,7 +246,9 @@ export function SettingsPage() {
                   <Radio.Control>
                     <Radio.Indicator />
                   </Radio.Control>
-                  <Label>{option.label}</Label>
+                  <Label>
+                    {option.name} · {option.label}
+                  </Label>
                 </Radio.Content>
                 <Description>{option.description}</Description>
               </Radio>

@@ -1,0 +1,41 @@
+/*
+ * The browser's speech engine exposes no audio levels, so this is a looping
+ * animation shown while speech is playing rather than a true level meter.
+ */
+.voice-wave {
+  display: inline-flex;
+  height: 1.25rem;
+  align-items: center;
+  gap: 3px;
+}
+
+.voice-wave > span {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--muted);
+  transition: height 150ms ease, background-color 150ms ease;
+}
+
+.voice-wave[data-active='true'] > span {
+  background: var(--accent);
+  animation: voice-wave 900ms ease-in-out infinite;
+}
+
+.voice-wave > span:nth-child(1) { animation-delay: -200ms; }
+.voice-wave > span:nth-child(2) { animation-delay: -500ms; }
+.voice-wave > span:nth-child(3) { animation-delay: -100ms; }
+.voice-wave > span:nth-child(4) { animation-delay: -650ms; }
+.voice-wave > span:nth-child(5) { animation-delay: -350ms; }
+
+@keyframes voice-wave {
+  0%, 100% { height: 4px; }
+  50% { height: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-wave[data-active='true'] > span {
+    animation: none;
+    height: 60%;
+  }
+}

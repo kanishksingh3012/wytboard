@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { PersonalityId } from '../interviewer/personalities'
-import type { SessionMode } from '../interviewer/prompts'
+import type { InterviewTypeId, SessionMode, SessionOptions } from '../interviewer/session'
 import type { LlmConfig } from '../llm/client'
 import { getProvider, type ProviderId } from '../llm/providers'
 
@@ -10,8 +10,13 @@ export interface Settings {
   apiKeys: Partial<Record<ProviderId, string>>
   models: Partial<Record<ProviderId, string>>
   customBaseUrl: string
+  /** Defaults for the options on the home screen; each board keeps its own. */
   personality: PersonalityId
   mode: SessionMode
+  interviewType: InterviewTypeId
+  durationMin: number
+  /** Whether the interviewer speaks its replies aloud. */
+  voiceEnabled: boolean
 }
 
 const STORAGE_KEY = 'wytboard-settings'
@@ -23,6 +28,9 @@ const DEFAULTS: Settings = {
   customBaseUrl: '',
   personality: 'friendly',
   mode: 'interview',
+  interviewType: 'new-product',
+  durationMin: 45,
+  voiceEnabled: true,
 }
 
 function load(): Settings {
@@ -70,4 +78,9 @@ export function llmConfigFrom(settings: Settings): LlmConfig | null {
   // A custom URL may be a local server that takes no key.
   const keyOk = settings.provider === 'custom' || apiKey !== ''
   return baseUrl && model && keyOk ? { baseUrl, apiKey, model } : null
+}
+
+export function sessionDefaultsFrom(settings: Settings): SessionOptions {
+  const { interviewType, personality, mode, durationMin } = settings
+  return { interviewType, personality, mode, durationMin }
 }

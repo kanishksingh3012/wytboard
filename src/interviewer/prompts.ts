@@ -1,6 +1,5 @@
-import { getPersonality, type PersonalityId } from './personalities'
-
-export type SessionMode = 'interview' | 'practice'
+import { getPersonality } from './personalities'
+import { getInterviewType, type SessionMode, type SessionOptions } from './session'
 
 const CORE = `You are a senior product designer running a whiteboard design interview.
 Your replies are read as conversation, so talk like a person: 1-3 short sentences,
@@ -45,17 +44,23 @@ export const RULE_REMINDER =
 /** Hidden first user turn that makes the interviewer open the session. */
 export const OPENING_CUE = 'The candidate has joined and is ready. Open the interview.'
 
-export function buildSystemPrompt(options: {
-  personality: PersonalityId
-  mode: SessionMode
-  brief: string
-}): string {
+export function buildSystemPrompt(options: SessionOptions & { brief: string }): string {
+  const personality = getPersonality(options.personality)
+  const type = getInterviewType(options.interviewType)
+
   const problem = options.brief
     ? `THE PROBLEM\nThe candidate asked to practise this. If it is already a full problem ` +
       `statement, present it as given. If it is only a topic, domain or company type, ` +
-      `turn it into one concrete design problem and present that.\n"""\n${options.brief}\n"""`
-    : `THE PROBLEM\nNo problem was chosen. Ask the candidate what they would like to practise, ` +
-      `then state one concrete design problem for it.`
+      `turn it into one concrete design problem of the exercise type and present that.\n` +
+      `"""\n${options.brief}\n"""`
+    : `THE PROBLEM\nNo problem was given. Invent one concrete design problem of the exercise ` +
+      `type and present it.`
 
-  return [CORE, STUCK[options.mode], getPersonality(options.personality).prompt, problem].join('\n\n')
+  return [
+    CORE,
+    STUCK[options.mode],
+    `Your name is ${personality.name}. ${personality.prompt}`,
+    `${type.prompt}\nThe session is planned for ${options.durationMin} minutes.`,
+    problem,
+  ].join('\n\n')
 }

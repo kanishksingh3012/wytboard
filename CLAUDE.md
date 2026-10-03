@@ -39,12 +39,17 @@ Keep these areas separate so each can be swapped without touching the others:
 - `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.
-- `voice/` (not built yet): a `SpeechInput` and a `SpeechOutput` interface, with the
-  browser implementations behind them, so a better engine (e.g. Kokoro) can replace them.
+- `src/voice/`: `SpeechOutput` interface with the browser implementation, so a better
+  engine (e.g. Kokoro) can replace it. Speech input is not built yet.
 
 ## Layout decisions (made by the user)
 
 - The app opens on the home screen, never straight on a canvas.
+- The dot grid is for the canvas only; home and settings use a plain background.
+- The home input panel carries the session options: interview type, interviewer,
+  duration and mode. They are stored on each board (`BoardMeta.session`).
+- The interviewer panel is a character card: illustrated avatar (DiceBear Lorelei,
+  generated locally), name, status and a voice wave that moves while speaking.
 - On a board, the drawing toolbar is at the bottom-centre and the interviewer
   panel is at the top-right. Excalidraw has no option for a bottom toolbar, so
   `src/canvas/board.css` repositions it; re-check that file when upgrading Excalidraw.

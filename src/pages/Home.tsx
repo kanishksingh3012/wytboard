@@ -3,14 +3,12 @@ import { ArrowRight, Ellipsis, Settings, SquarePen } from 'lucide-react'
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
+import { OptionSelect } from '../app/OptionSelect'
 import { ThemeToggle } from '../app/ThemeToggle'
+import { PERSONALITIES } from '../interviewer/personalities'
+import { DURATIONS, INTERVIEW_TYPES, MODES, type SessionOptions } from '../interviewer/session'
+import { sessionDefaultsFrom, updateSettings, useSettings } from '../settings/settings'
 import { createBoard, deleteBoard, listBoards, type BoardMeta } from '../library/boards'
-
-const EXAMPLES = [
-  'Design a grocery delivery app for older adults',
-  'Improve onboarding for a fintech app',
-  'A whiteboard challenge for a travel company',
-]
 
 function formatEdited(timestamp: number): string {
   const date = new Date(timestamp)
@@ -22,6 +20,8 @@ function formatEdited(timestamp: number): string {
 
 export function Home() {
   const navigate = useNavigate()
+  const settings = useSettings()
+  const session = sessionDefaultsFrom(settings)
   const [brief, setBrief] = useState('')
   const [boards, setBoards] = useState<BoardMeta[] | null>(null)
   const [pendingDelete, setPendingDelete] = useState<BoardMeta | null>(null)
@@ -30,13 +30,16 @@ export function Home() {
     void listBoards().then(setBoards)
   }, [])
 
+  // The choices are remembered as the defaults for next time.
+  const setOption = (patch: Partial<SessionOptions>) => updateSettings(patch)
+
   const start = async (text: string) => {
-    const board = await createBoard(text)
+    const board = await createBoard(text, session)
     void navigate(`/board/${board.id}`)
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey && brief.trim()) {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
       void start(brief)
     }
@@ -50,7 +53,7 @@ export function Home() {
   }
 
   return (
-    <div className="dot-grid h-full overflow-y-auto">
+    <div className="bg-background h-full overflow-y-auto">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
         <Brand />
         <div className="flex items-center gap-1">
@@ -63,46 +66,63 @@ export function Home() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 pb-20">
-        <section className="mx-auto max-w-2xl pt-[10vh] pb-16 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        <section className="mx-auto max-w-3xl pt-[7vh] pb-14">
+          <h1 className="text-center text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             What do you want to practise today?
           </h1>
-          <p className="text-muted mt-3 text-base text-balance">
-            Describe a design challenge, a domain or the kind of company you are preparing for.
+          <p className="text-muted mt-3 text-center text-base text-balance">
+            Describe a challenge, a domain or a company. Leave it empty and the interviewer picks
+            a problem for you.
           </p>
 
-          <div className="bg-surface shadow-float focus-within:ring-accent/40 mt-8 rounded-3xl p-3 text-left transition-shadow focus-within:ring-2">
+          <div className="bg-surface shadow-float focus-within:ring-accent/40 mt-8 rounded-3xl p-4 transition-shadow focus-within:ring-2">
             <TextArea
               aria-label="What do you want to practise today?"
-              className="w-full resize-none border-0 bg-transparent px-3 py-2 text-base shadow-none outline-none focus:ring-0"
+              className="w-full resize-none border-0 bg-transparent px-2 py-1 text-base shadow-none outline-none focus:ring-0"
               placeholder="e.g. Design a booking flow for a dental clinic"
               rows={2}
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               onKeyDown={onKeyDown}
             />
-            <div className="mt-1 flex items-center justify-between gap-2">
+
+            <div className="border-separator mt-3 grid grid-cols-2 gap-3 border-t pt-4 sm:grid-cols-4">
+              <OptionSelect
+                label="Interview type"
+                value={session.interviewType}
+                options={INTERVIEW_TYPES}
+                onChange={(interviewType) => setOption({ interviewType })}
+              />
+              <OptionSelect
+                label="Interviewer"
+                value={session.personality}
+                options={PERSONALITIES.map((p) => ({ id: p.id, label: `${p.name} · ${p.label}` }))}
+                onChange={(personality) => setOption({ personality })}
+              />
+              <OptionSelect
+                label="Duration"
+                value={session.durationMin}
+                options={DURATIONS.map((minutes) => ({ id: minutes, label: `${minutes} min` }))}
+                onChange={(durationMin) => setOption({ durationMin })}
+              />
+              <OptionSelect
+                label="Mode"
+                value={session.mode}
+                options={MODES}
+                onChange={(mode) => setOption({ mode })}
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-2">
               <Button variant="ghost" onPress={() => void start('')}>
                 <SquarePen className="size-4" />
                 Blank board
               </Button>
-              <Button
-                variant="primary"
-                isDisabled={!brief.trim()}
-                onPress={() => void start(brief)}
-              >
+              <Button variant="primary" onPress={() => void start(brief)}>
                 Start practising
                 <ArrowRight className="size-4" />
               </Button>
             </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {EXAMPLES.map((example) => (
-              <Button key={example} size="sm" variant="tertiary" onPress={() => setBrief(example)}>
-                {example}
-              </Button>
-            ))}
           </div>
         </section>
 
