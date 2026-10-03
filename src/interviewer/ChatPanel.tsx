@@ -1,18 +1,20 @@
 import { Button, Spinner, TextArea, Tooltip } from '@heroui/react'
-import { ChevronDown, ChevronUp, SendHorizontal, Volume2, VolumeX } from 'lucide-react'
+import { ChevronDown, ChevronUp, Mic, ScanEye, SendHorizontal, Square, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router'
 import { getTranscript, saveTranscript, type TranscriptMessage } from '../library/boards'
-import { chat, type ChatMessage } from '../llm/client'
+import type { BoardCapture } from '../canvas/Board'
+import { LlmError, chat, type ChatMessage, type ContentPart } from '../llm/client'
 import {
   llmConfigFrom,
   sessionDefaultsFrom,
   updateSettings,
   useSettings,
 } from '../settings/settings'
+import { browserRecognition } from '../voice/recognition'
 import { browserSpeech } from '../voice/speech'
 import { avatarFor, getPersonality } from './personalities'
-import { OPENING_CUE, RULE_REMINDER, buildSystemPrompt } from './prompts'
+import { OPENING_CUE, REVIEW_CUE, RULE_REMINDER, buildSystemPrompt } from './prompts'
 import { getInterviewType, type SessionOptions } from './session'
 import { VoiceWave } from './VoiceWave'
 
@@ -26,9 +28,17 @@ interface ChatPanelProps {
   brief: string
   /** Absent on boards made before session options existed; settings are used then. */
   session?: SessionOptions
+  captureBoard: () => Promise<BoardCapture> | undefined
 }
 
-export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelProps) {
+/** The one board image kept in the conversation, and the turn it belongs to. */
+interface SentSnapshot {
+  messageId: string
+  version: number
+  image: string
+}
+
+export function ChatPanel({ boardId, brief, session: boardSession, captureBoard }: ChatPanelProps) {
   const settings = useSettings()
   const config = llmConfigFrom(settings)
   const session = boardSession ?? sessionDefaultsFrom(settings)
@@ -41,6 +51,10 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
   const [busy, setBusy] = useState(false)
   const [speaking, setSpeaking] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [recording, setRecording] = useState(false)
+  const snapshot = useRef<SentSnapshot | null>(null)
+  const heard = useRef('')
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -51,6 +65,7 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
     return () => {
       cancelled = true
       browserSpeech.stop()
+      browserRecognition.stop()
     }
   }, [boardId])
 
@@ -68,28 +83,62 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
     updateSettings({ voiceEnabled: !settings.voiceEnabled })
   }
 
-  const send = async (content: string, hidden = false) => {
+  const send = async (content: string, options: { hidden?: boolean; review?: boolean } = {}) => {
     if (!config || !messages || busy) return
     stopSpeaking()
 
-    const userMessage: TranscriptMessage = { id: crypto.randomUUID(), role: 'user', content, hidden }
+    const userMessage: TranscriptMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content,
+      hidden: options.hidden,
+    }
     const history = [...messages, userMessage]
     setMessages(history)
     setDraft('')
     setError('')
     setBusy(true)
 
-    const request: ChatMessage[] = [
-      { role: 'system', content: buildSystemPrompt({ ...session, brief }) },
-      ...history.map((message, index) => ({
-        role: message.role,
-        content:
-          index === history.length - 1 ? `${message.content}\n\n${RULE_REMINDER}` : message.content,
-      })),
-    ]
-
     try {
-      const reply = await chat(config, request, { maxTokens: MAX_REPLY_TOKENS })
+      // Quota rule: a new image is sent only when the board changed since the
+      // last one, or when the user explicitly asks for a review.
+      const board = await captureBoard()
+      if (board?.image && (options.review || board.version !== snapshot.current?.version)) {
+        snapshot.current = { messageId: userMessage.id, version: board.version, image: board.image }
+      }
+      const boardText = board?.texts.length
+        ? `\n\nText typed on the board:\n${board.texts.map((text) => `- ${text}`).join('\n')}`
+        : ''
+
+      const buildRequest = (withImage: boolean): ChatMessage[] => [
+        { role: 'system', content: buildSystemPrompt({ ...session, brief }) },
+        ...history.map((message, index): ChatMessage => {
+          const isLast = index === history.length - 1
+          const text = isLast ? `${message.content}${boardText}\n\n${RULE_REMINDER}` : message.content
+          // Only the latest snapshot stays in the conversation; older images are dropped.
+          if (withImage && message.id === snapshot.current?.messageId) {
+            const parts: ContentPart[] = [
+              { type: 'text', text },
+              { type: 'image_url', image_url: { url: snapshot.current.image } },
+            ]
+            return { role: message.role, content: parts }
+          }
+          return { role: message.role, content: text }
+        }),
+      ]
+
+      let reply: string
+      try {
+        reply = await chat(config, buildRequest(true), { maxTokens: MAX_REPLY_TOKENS })
+      } catch (cause) {
+        // A model that cannot read images rejects the request; fall back to text only.
+        const rejected = cause instanceof LlmError && cause.status === 400 && snapshot.current
+        if (!rejected) throw cause
+        reply = await chat(config, buildRequest(false), { maxTokens: MAX_REPLY_TOKENS })
+        snapshot.current = null
+        setNotice('This model could not read the board image, so only typed text was sent.')
+      }
+
       const next: TranscriptMessage[] = [
         ...history,
         { id: crypto.randomUUID(), role: 'assistant', content: reply },
@@ -106,11 +155,34 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
     } catch (cause) {
       // Drop the unanswered turn so the user can retry without duplicates.
       setMessages(messages)
-      if (!hidden) setDraft(content)
+      if (!options.hidden) setDraft(content)
       setError(cause instanceof Error ? cause.message : 'Something went wrong.')
     } finally {
       setBusy(false)
     }
+  }
+
+  // Tap to start talking, tap again to stop; what was heard is sent as the turn.
+  const toggleRecording = () => {
+    if (recording) {
+      browserRecognition.stop()
+      return
+    }
+    stopSpeaking()
+    setError('')
+    heard.current = ''
+    setRecording(true)
+    browserRecognition.start({
+      onText: (text) => {
+        heard.current = text
+        setDraft(text)
+      },
+      onError: setError,
+      onEnd: () => {
+        setRecording(false)
+        if (heard.current) void send(heard.current)
+      },
+    })
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -122,7 +194,7 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
 
   const visible = messages?.filter((message) => !message.hidden) ?? []
   const started = (messages?.length ?? 0) > 0
-  const status = speaking ? 'Speaking' : busy ? 'Thinking' : 'Listening'
+  const status = recording ? 'Hearing you' : speaking ? 'Speaking' : busy ? 'Thinking' : 'Listening'
 
   if (!open) {
     return (
@@ -216,7 +288,7 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
               className="mt-3"
               size="sm"
               variant="primary"
-              onPress={() => void send(OPENING_CUE, true)}
+              onPress={() => void send(OPENING_CUE, { hidden: true })}
             >
               Start interview
             </Button>
@@ -243,6 +315,8 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
           </div>
         )}
 
+        {notice && <p className="text-muted text-xs">{notice}</p>}
+
         {error && (
           <p role="alert" className="text-danger text-sm">
             {error}
@@ -251,24 +325,51 @@ export function ChatPanel({ boardId, brief, session: boardSession }: ChatPanelPr
       </div>
 
       {config && started && (
-        <div className="border-separator flex items-end gap-2 border-t p-2">
-          <TextArea
-            aria-label={`Message ${personality.name}`}
-            className="max-h-32 min-h-9 flex-1 resize-none text-sm"
-            placeholder="Ask or answer…"
-            rows={1}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={onKeyDown}
-          />
+        <div className="border-separator border-t p-2">
+          <div className="flex items-end gap-2">
+            <TextArea
+              aria-label={`Message ${personality.name}`}
+              className="max-h-32 min-h-9 flex-1 resize-none text-sm"
+              placeholder={recording ? 'Listening… tap stop when done' : 'Talk or type…'}
+              rows={1}
+              value={draft}
+              readOnly={recording}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={onKeyDown}
+            />
+            {browserRecognition.supported && (
+              <Tooltip delay={400}>
+                <Button
+                  isIconOnly
+                  variant={recording ? 'danger' : 'secondary'}
+                  aria-label={recording ? 'Stop and send' : 'Talk'}
+                  isDisabled={busy}
+                  onPress={toggleRecording}
+                >
+                  {recording ? <Square className="size-3.5" /> : <Mic className="size-4" />}
+                </Button>
+                <Tooltip.Content>{recording ? 'Stop and send' : 'Talk'}</Tooltip.Content>
+              </Tooltip>
+            )}
+            <Button
+              isIconOnly
+              variant="primary"
+              aria-label="Send message"
+              isDisabled={!draft.trim() || busy || recording}
+              onPress={() => void send(draft.trim())}
+            >
+              <SendHorizontal className="size-4" />
+            </Button>
+          </div>
           <Button
-            isIconOnly
-            variant="primary"
-            aria-label="Send message"
-            isDisabled={!draft.trim() || busy}
-            onPress={() => void send(draft.trim())}
+            size="sm"
+            variant="ghost"
+            className="mt-1"
+            isDisabled={busy || recording}
+            onPress={() => void send(REVIEW_CUE, { review: true })}
           >
-            <SendHorizontal className="size-4" />
+            <ScanEye className="size-4" />
+            Review my board
           </Button>
         </div>
       )}

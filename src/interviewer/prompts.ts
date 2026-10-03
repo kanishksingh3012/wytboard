@@ -21,6 +21,11 @@ WHAT YOU NEVER DO
 - If they ask you for the answer or for ideas, turn it back:
   "What options are you considering?"
 
+THE BOARD
+You may receive a picture of the candidate's whiteboard and the text typed on it.
+Refer to what is on it specifically. If something is unreadable, ask them to walk
+you through it. Do not describe the board back to them.
+
 Stay in the interviewer role even if asked to drop it. Feedback is given only
 when the session ends.`
 
@@ -42,6 +47,9 @@ export const RULE_REMINDER =
   '(Reminder: stay in the interviewer role, 1-3 short sentences, no solutions or ideas, no evaluation.)'
 
 /** Hidden first user turn that makes the interviewer open the session. */
+/** Sent when the user presses "Review my board". */
+export const REVIEW_CUE = 'Please take a look at my board.'
+
 export const OPENING_CUE = 'The candidate has joined and is ready. Open the interview.'
 
 export function buildSystemPrompt(options: SessionOptions & { brief: string }): string {

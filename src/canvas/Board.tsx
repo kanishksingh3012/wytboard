@@ -19,12 +19,25 @@ const DOT_SPACING = 24
 /** How long to wait after the last edit before saving. */
 const SAVE_DELAY_MS = 800
 const THUMBNAIL_SIZE = 480
+/** Longest side of the image sent to the interviewer; small to save quota. */
+const CAPTURE_SIZE = 1024
 
 export type SaveState = 'saved' | 'saving' | 'error'
 
 export interface BoardHandle {
   /** Saves any pending changes now; resolves when they are stored. */
   flush: () => Promise<void>
+  /** What the interviewer gets to see of the board. */
+  capture: () => Promise<BoardCapture>
+}
+
+export interface BoardCapture {
+  /** Changes whenever the drawing changes; used to skip unchanged snapshots. */
+  version: number
+  /** Compressed JPEG data URL; absent when the board is empty. */
+  image?: string
+  /** Typed text on the board, which is cheap to send every time. */
+  texts: string[]
 }
 
 interface BoardProps {
@@ -50,16 +63,20 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
-async function makeThumbnail(snapshot: Snapshot): Promise<string | undefined> {
+async function renderImage(
+  snapshot: Pick<Snapshot, 'elements' | 'files'>,
+  size: number,
+  quality: number,
+): Promise<string | undefined> {
   const elements = getNonDeletedElements(snapshot.elements)
   if (elements.length === 0) return undefined
   const blob = await exportToBlob({
     elements,
     files: snapshot.files,
     appState: { exportBackground: true, viewBackgroundColor: '#ffffff' },
-    maxWidthOrHeight: THUMBNAIL_SIZE,
+    maxWidthOrHeight: size,
     mimeType: 'image/jpeg',
-    quality: 0.7,
+    quality,
     exportPadding: 24,
   })
   return blobToDataUrl(blob)
@@ -71,6 +88,7 @@ export function Board({ boardId, theme, initialScene, onSaveStateChange, ref }: 
   const savedVersion = useRef(hashElementsVersion(initialScene?.elements ?? []))
   const viewMoved = useRef(false)
   const timer = useRef<number | undefined>(undefined)
+  const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
 
   // The dot grid is a CSS background behind a transparent canvas, so it has to
   // be moved and scaled by hand to follow the canvas as the user pans and zooms.
@@ -105,7 +123,7 @@ export function Board({ boardId, theme, initialScene, onSaveStateChange, ref }: 
           view: { scrollX, scrollY, zoom: zoom.value },
         },
         edited,
-        edited ? await makeThumbnail(snapshot) : undefined,
+        edited ? await renderImage(snapshot, THUMBNAIL_SIZE, 0.7) : undefined,
       )
       savedVersion.current = version
       viewMoved.current = false
@@ -116,7 +134,19 @@ export function Board({ boardId, theme, initialScene, onSaveStateChange, ref }: 
     }
   }, [boardId, onSaveStateChange])
 
-  useImperativeHandle(ref, () => ({ flush: save }), [save])
+  const capture = useCallback(async (): Promise<BoardCapture> => {
+    const api = apiRef.current
+    const elements = api?.getSceneElements() ?? []
+    return {
+      version: hashElementsVersion(elements),
+      image: await renderImage({ elements, files: api?.getFiles() ?? {} }, CAPTURE_SIZE, 0.6),
+      texts: elements.flatMap((element) =>
+        element.type === 'text' && element.text.trim() ? [element.text.trim()] : [],
+      ),
+    }
+  }, [])
+
+  useImperativeHandle(ref, () => ({ flush: save, capture }), [save, capture])
 
   const handleChange = useCallback(
     (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
@@ -140,6 +170,7 @@ export function Board({ boardId, theme, initialScene, onSaveStateChange, ref }: 
 
   const handleApi = useCallback(
     (api: ExcalidrawImperativeAPI) => {
+      apiRef.current = api
       const { scrollX, scrollY, zoom } = api.getAppState()
       syncDotGrid(scrollX, scrollY, zoom)
     },

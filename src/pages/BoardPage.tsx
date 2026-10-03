@@ -136,7 +136,12 @@ export function BoardPage() {
         </span>
       </div>
 
-      <ChatPanel boardId={id} brief={loaded.meta.brief} session={loaded.meta.session} />
+      <ChatPanel
+        boardId={id}
+        brief={loaded.meta.brief}
+        session={loaded.meta.session}
+        captureBoard={() => boardRef.current?.capture()}
+      />
     </div>
   )
 }

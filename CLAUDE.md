@@ -40,7 +40,8 @@ Keep these areas separate so each can be swapped without touching the others:
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.
 - `src/voice/`: `SpeechOutput` interface with the browser implementation, so a better
-  engine (e.g. Kokoro) can replace it. Speech input is not built yet.
+  engine (e.g. Kokoro) can replace it, and `SpeechInput` (browser speech recognition,
+  tap to talk, tap to stop and send).
 
 ## Layout decisions (made by the user)
 
@@ -89,7 +90,7 @@ Free LLM tiers are rate-limited, so every request must be justified:
 - Downscale and compress the snapshot before sending.
 - Keep only the latest snapshot in the conversation history; drop older images.
 - Always send typed canvas text as plain text.
-- Summarise early turns once the history grows long.
+- Summarise early turns once the history grows long. (Not built yet.)
 - If the chosen model cannot read images, send text only and tell the user.
 
 ## UI style
