@@ -28,7 +28,7 @@ answers clarifying questions and probes their reasoning.
 
 Keep these areas separate so each can be swapped without touching the others:
 
-- `src/pages/`: `Home` (hero input plus board library), `BoardPage`, `SettingsPage`.
+- `src/pages/`: `Home` (hero input plus board library), `BoardPage`, `SettingsPage`, `LearnPage`.
   Routing is hash-based (`react-router` `HashRouter`) so static hosts need no rewrites.
 - `src/canvas/`: Excalidraw wrapper, autosave, thumbnails, dot grid. Later: board
   snapshot export and change detection for the interviewer.
@@ -39,6 +39,8 @@ Keep these areas separate so each can be swapped without touching the others:
   feedback are stored on `BoardMeta`.
 - `src/challenges/`: `challenges.json`, the community-editable bank of building blocks,
   and the generator behind "Suggest a challenge". All wording must be original.
+- `src/learn/`: the Learn section's content (`content.ts`, from the author's own notes) and
+  the cheat sheet shown on the board in practice mode only, never in interview mode.
 - `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.
@@ -56,6 +58,8 @@ Keep these areas separate so each can be swapped without touching the others:
 - The interviewer panel is a character card: illustrated avatar (DiceBear Lorelei,
   generated locally), name, status and a voice wave that moves while speaking.
 - The interviewer panel is open by default on every screen size.
+- The session timer's phases are the five Learn steps (Understand, Scope, Explore,
+  Solve, Validate). Timings are a rough guide, never enforced.
 - Space starts and stops talking to the interviewer once the interview has started
   (Ctrl+M while typing). This takes over Excalidraw's hold-Space-to-pan during a session.
 - Any change to what is stored or sent must be reflected in `PRIVACY.md` and the

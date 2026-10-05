@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from 'react-router'
 import { BoardPage } from './pages/BoardPage'
 import { Home } from './pages/Home'
+import { LearnPage } from './pages/LearnPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/board/:id" element={<BoardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/learn" element={<LearnPage />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </div>

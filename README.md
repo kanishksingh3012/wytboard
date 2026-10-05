@@ -11,6 +11,8 @@ browser too.
 
 **Status:** early development.
 
+- A Learn section that teaches a five-step way through any whiteboard challenge,
+  with a cheat sheet available on the board in practice mode.
 - Working: home screen with session options, board library with autosave, canvas,
   settings, an interviewer that reads your board, speaks its replies and can be
   spoken to (in browsers with speech recognition), a session timer with suggested

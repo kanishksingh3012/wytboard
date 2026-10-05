@@ -4,13 +4,13 @@ export interface Phase {
   share: number
 }
 
-/** Suggested pacing for a whiteboard exercise. */
+/** Suggested pacing, matching the five steps taught in the Learn section. A rough guide only. */
 export const PHASES: Phase[] = [
-  { label: 'Clarify', share: 0.15 },
-  { label: 'Users', share: 0.2 },
-  { label: 'Ideas', share: 0.2 },
-  { label: 'Solution', share: 0.35 },
-  { label: 'Wrap-up', share: 0.1 },
+  { label: 'Understand', share: 0.18 },
+  { label: 'Scope', share: 0.1 },
+  { label: 'Explore', share: 0.27 },
+  { label: 'Solve', share: 0.35 },
+  { label: 'Validate', share: 0.1 },
 ]
 
 /** Hints the candidate may ask for in one practice-mode session. */

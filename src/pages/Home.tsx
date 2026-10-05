@@ -1,5 +1,5 @@
 import { AlertDialog, Button, Dropdown, Label, TextArea } from '@heroui/react'
-import { ArrowRight, Dices, Ellipsis, Settings, SquarePen, Upload } from 'lucide-react'
+import { ArrowRight, BookOpen, Dices, Ellipsis, Settings, SquarePen, Upload } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { Brand } from '../app/Brand'
@@ -110,6 +110,10 @@ export function Home() {
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
         <Brand />
         <div className="flex items-center gap-1">
+          <Button variant="ghost" onPress={() => void navigate('/learn')}>
+            <BookOpen className="size-4.5" />
+            Learn
+          </Button>
           <Button variant="ghost" onPress={() => void navigate('/settings')}>
             <Settings className="size-4.5" />
             Settings

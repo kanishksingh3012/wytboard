@@ -1,7 +1,8 @@
 import { Button, Spinner, TextArea, Tooltip } from '@heroui/react'
-import { ChevronDown, ChevronUp, Lightbulb, Mic, ScanEye, SendHorizontal, Square, Volume2, VolumeX } from 'lucide-react'
+import { ChevronDown, ChevronUp, Lightbulb, NotebookText, Mic, ScanEye, SendHorizontal, Square, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router'
+import { CheatSheet } from '../learn/CheatSheet'
 import { getTranscript, saveTranscript, type TranscriptMessage } from '../library/boards'
 import type { BoardCapture } from '../canvas/Board'
 import { LlmError, chat, type ChatMessage, type ContentPart } from '../llm/client'
@@ -72,6 +73,7 @@ export function ChatPanel(props: ChatPanelProps) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [recording, setRecording] = useState(false)
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false)
   const snapshot = useRef<SentSnapshot | null>(null)
   const heard = useRef('')
   const listRef = useRef<HTMLDivElement>(null)
@@ -450,8 +452,15 @@ export function ChatPanel(props: ChatPanelProps) {
               Hint ({HINT_BUDGET - props.hintsUsed} left)
             </Button>
           )}
+          {session.mode === 'practice' && (
+            <Button size="sm" variant="ghost" className="mt-1" onPress={() => setCheatSheetOpen(true)}>
+              <NotebookText className="size-4" />
+              Cheat sheet
+            </Button>
+          )}
         </div>
       )}
+      <CheatSheet isOpen={cheatSheetOpen} onClose={() => setCheatSheetOpen(false)} />
     </aside>
   )
 }
