@@ -41,6 +41,8 @@ Keep these areas separate so each can be swapped without touching the others:
   and the generator behind "Suggest a challenge". All wording must be original.
 - `src/learn/`: the Learn section's content (`content.ts`, from the author's own notes) and
   the cheat sheet shown on the board in practice mode only, never in interview mode.
+- `src/feedback/`: floating feedback form. Posts JSON to `VITE_FEEDBACK_URL` (a form
+  service, since there is no server) and is hidden when that is unset.
 - `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.

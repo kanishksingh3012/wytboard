@@ -9,6 +9,8 @@ browser too.
 
 **Try it:** https://kanishksingh3012.github.io/wytboard/
 
+![Wytboard home screen](docs/screenshot-home.png)
+
 **Status:** early development.
 
 - A Learn section that teaches a five-step way through any whiteboard challenge,
@@ -40,6 +42,18 @@ type has a sentence `template` with `{slot}` placeholders and a list of options 
 every slot. To contribute, add options to a list (or a new slot to a template) and
 open a pull request. Please write your own wording rather than copying prompts from
 books, courses or other sites.
+
+## Feedback button
+
+The floating feedback form posts JSON (`email`, `message`, `page`) to the URL in
+`VITE_FEEDBACK_URL`. Wytboard has no server, so point it at a form service such as
+Formspree by creating a `.env` file:
+
+```
+VITE_FEEDBACK_URL=https://formspree.io/f/your-form-id
+```
+
+The button stays hidden until this is set.
 
 ## Privacy and contributing
 

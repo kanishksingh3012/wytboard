@@ -23,5 +23,9 @@ contain the drawing, transcript and feedback, but never your API key.
 - **Hugging Face.** If you turn on the natural voice, the voice model is
   downloaded from Hugging Face once. Speech is then generated on your device.
 - **Font CDN.** The canvas loads its fonts from a public CDN.
+- **Feedback form.** If you send feedback, your message, the page you were on and
+  your email address (only if you choose to give it) are sent to the form service
+  the site owner has set up, which forwards them to the owner. Nothing from your
+  boards is included.
 - **GitHub Pages.** The hosted version is served by GitHub, which sees ordinary
   web requests such as your IP address.

@@ -1,4 +1,5 @@
 import { HashRouter, Route, Routes } from 'react-router'
+import { FeedbackButton } from './feedback/FeedbackButton'
 import { BoardPage } from './pages/BoardPage'
 import { Home } from './pages/Home'
 import { LearnPage } from './pages/LearnPage'
@@ -16,6 +17,7 @@ function App() {
           <Route path="/learn" element={<LearnPage />} />
           <Route path="*" element={<Home />} />
         </Routes>
+        <FeedbackButton />
       </div>
     </HashRouter>
   )

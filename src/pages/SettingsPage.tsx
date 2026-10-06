@@ -376,6 +376,10 @@ export function SettingsPage() {
               The natural voice model is downloaded from Hugging Face once and then runs on this
               device. Canvas fonts are loaded from a public CDN.
             </li>
+            <li>
+              If you send feedback, your message and your email address, only if you give it,
+              go to the site owner through a form service. Nothing from your boards is included.
+            </li>
           </ul>
         </Section>
       </main>
