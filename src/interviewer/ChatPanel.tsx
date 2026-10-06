@@ -31,6 +31,8 @@ interface ChatPanelProps {
   captureBoard: () => Promise<BoardCapture> | undefined
   startedAt?: number
   ended: boolean
+  paused: boolean
+  onResume: () => void
   hintsUsed: number
   onStart: () => number
   onHintUsed: () => void
@@ -74,6 +76,26 @@ export function ChatPanel(props: ChatPanelProps) {
   const [notice, setNotice] = useState('')
   const [recording, setRecording] = useState(false)
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false)
+  const [preparingVoice, setPreparingVoice] = useState(false)
+  const [online, setOnline] = useState(() => navigator.onLine)
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine)
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
+
+  // Pausing silences the interviewer and stops listening.
+  const { paused } = props
+  useEffect(() => {
+    if (!paused) return
+    kokoroSpeech.stop()
+    browserRecognition.stop()
+  }, [paused])
   const snapshot = useRef<SentSnapshot | null>(null)
   const heard = useRef('')
   const listRef = useRef<HTMLDivElement>(null)
@@ -104,6 +126,7 @@ export function ChatPanel(props: ChatPanelProps) {
   const stopSpeaking = () => {
     kokoroSpeech.stop()
     setSpeaking(false)
+    setPreparingVoice(false)
   }
 
   const toggleVoice = () => {
@@ -181,10 +204,18 @@ export function ChatPanel(props: ChatPanelProps) {
       ]
       setMessages(next)
       if (settings.voiceEnabled) {
+        // The natural voice takes a few seconds to generate before it can play.
+        setPreparingVoice(speech === kokoroSpeech)
         speech.speak(reply, {
           ...personality.voice,
-          onStart: () => setSpeaking(true),
-          onEnd: () => setSpeaking(false),
+          onStart: () => {
+            setPreparingVoice(false)
+            setSpeaking(true)
+          },
+          onEnd: () => {
+            setPreparingVoice(false)
+            setSpeaking(false)
+          },
         })
       }
       await saveTranscript(boardId, next)
@@ -225,9 +256,10 @@ export function ChatPanel(props: ChatPanelProps) {
   const visible = messages?.filter((message) => !message.hidden) ?? []
   const started = (messages?.length ?? 0) > 0
 
-  // Space starts and stops talking, so the hands can stay on the board. While
-  // typing (chat box, canvas text) Space types a space and Ctrl+M does the same job.
-  const canTalk = Boolean(config) && started && !props.ended && browserRecognition.supported && !busy
+  // M starts and stops talking, so the hands can stay on the board. While typing
+  // (chat box, canvas text) M types a letter and Ctrl+M does the same job.
+  const canTalk =
+    Boolean(config) && started && !props.ended && !paused && browserRecognition.supported && !busy
   const toggleRef = useRef(toggleRecording)
   useEffect(() => {
     toggleRef.current = toggleRecording
@@ -238,10 +270,10 @@ export function ChatPanel(props: ChatPanelProps) {
       const target = event.target as HTMLElement | null
       const typing = target?.matches('input, textarea, select, [contenteditable="true"]') ?? false
       const modified = event.shiftKey || event.altKey || event.metaKey
-      const space = event.code === 'Space' && !event.ctrlKey && !modified && !typing
+      const plainM = event.code === 'KeyM' && !event.ctrlKey && !modified && !typing
       const ctrlM = event.ctrlKey && !modified && event.key.toLowerCase() === 'm'
-      if (!space && !ctrlM) return
-      // Keep the key from also pressing a focused button or panning the canvas.
+      if (!plainM && !ctrlM) return
+      // Keep the key from reaching the canvas or a focused control.
       event.preventDefault()
       event.stopPropagation()
       if (!event.repeat) toggleRef.current()
@@ -257,7 +289,17 @@ export function ChatPanel(props: ChatPanelProps) {
     }
   }
 
-  const status = recording ? 'Hearing you' : speaking ? 'Speaking' : busy ? 'Thinking' : 'Listening'
+  const status = paused
+    ? 'Paused'
+    : recording
+      ? 'Hearing you'
+      : speaking
+        ? 'Speaking'
+        : busy
+          ? 'Thinking'
+          : preparingVoice
+            ? 'Preparing voice'
+            : 'Listening'
 
   if (!open) {
     return (
@@ -378,6 +420,13 @@ export function ChatPanel(props: ChatPanelProps) {
           </div>
         )}
 
+        {!online && (
+          <p role="status" className="text-warning text-sm">
+            You are offline. Your drawing still saves, but {personality.name} needs a connection to
+            reply.
+          </p>
+        )}
+
         {notice && <p className="text-muted text-xs">{notice}</p>}
 
         {error && (
@@ -393,16 +442,31 @@ export function ChatPanel(props: ChatPanelProps) {
         </p>
       )}
 
-      {config && started && !props.ended && (
+      {config && started && !props.ended && paused && (
+        <div className="border-separator flex items-center justify-between gap-3 border-t px-4 py-3">
+          <p className="text-muted text-sm">Session paused. The timer is stopped.</p>
+          <Button size="sm" variant="primary" onPress={props.onResume}>
+            Resume
+          </Button>
+        </div>
+      )}
+
+      {config && started && !props.ended && !paused && (
         <div className="border-separator border-t p-2">
           <div className="flex items-end gap-2">
             <TextArea
               aria-label={`Message ${personality.name}`}
               className="max-h-32 min-h-9 flex-1 resize-none text-sm"
-              placeholder={recording ? 'Listening… press Space when done' : 'Press Space to talk, or type…'}
+              placeholder={
+                recording
+                  ? 'Listening… press M when done'
+                  : busy
+                    ? `${personality.name} is thinking…`
+                    : 'Press M to talk, or type…'
+              }
               rows={1}
               value={draft}
-              readOnly={recording}
+              readOnly={recording || busy}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={onKeyDown}
             />
@@ -417,14 +481,14 @@ export function ChatPanel(props: ChatPanelProps) {
                 >
                   {recording ? <Square className="size-3.5" /> : <Mic className="size-4" />}
                 </Button>
-                <Tooltip.Content>{recording ? 'Stop and send (Space)' : 'Talk (Space)'}</Tooltip.Content>
+                <Tooltip.Content>{recording ? 'Stop and send (M)' : 'Talk (M)'}</Tooltip.Content>
               </Tooltip>
             )}
             <Button
               isIconOnly
               variant="primary"
               aria-label="Send message"
-              isDisabled={!draft.trim() || busy || recording}
+              isDisabled={!draft.trim() || busy || recording || !online}
               onPress={() => void send(draft.trim())}
             >
               <SendHorizontal className="size-4" />

@@ -60,8 +60,10 @@ Keep these areas separate so each can be swapped without touching the others:
 - The interviewer panel is open by default on every screen size.
 - The session timer's phases are the five Learn steps (Understand, Scope, Explore,
   Solve, Validate). Timings are a rough guide, never enforced.
-- Space starts and stops talking to the interviewer once the interview has started
-  (Ctrl+M while typing). This takes over Excalidraw's hold-Space-to-pan during a session.
+- M starts and stops talking to the interviewer once the interview has started
+  (Ctrl+M while typing). Space is left to Excalidraw for panning.
+- A session can be paused: the timer stops and the interviewer goes quiet until resumed.
+- Boards are for laptops and tablets; phones get a notice instead of the canvas.
 - Any change to what is stored or sent must be reflected in `PRIVACY.md` and the
   Privacy section of Settings.
 - On a board, the drawing toolbar is at the bottom-centre and the interviewer

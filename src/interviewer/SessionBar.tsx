@@ -1,14 +1,17 @@
-import { Button } from '@heroui/react'
+import { Button, Tooltip } from '@heroui/react'
+import { Pause, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PHASES, phaseIndexAt } from './phases'
 
 interface SessionBarProps {
   startedAt: number
   endedAt?: number
+  pausedAt?: number
   durationMin: number
   hasFeedback: boolean
   ending: boolean
   onEnd: () => void
+  onTogglePause: () => void
   onShowFeedback: () => void
 }
 
@@ -20,7 +23,9 @@ function clock(ms: number): string {
 /** Countdown, suggested phases and the end-session control, at the top of the board. */
 export function SessionBar(props: SessionBarProps) {
   const [now, setNow] = useState(Date.now)
-  const running = props.endedAt === undefined
+  const ended = props.endedAt !== undefined
+  const paused = !ended && props.pausedAt !== undefined
+  const running = !ended && !paused
 
   useEffect(() => {
     if (!running) return
@@ -28,7 +33,7 @@ export function SessionBar(props: SessionBarProps) {
     return () => window.clearInterval(interval)
   }, [running])
 
-  const elapsed = (props.endedAt ?? now) - props.startedAt
+  const elapsed = (props.endedAt ?? props.pausedAt ?? now) - props.startedAt
   const remaining = props.durationMin * 60_000 - elapsed
   const overtime = remaining < 0
   const current = phaseIndexAt(elapsed, props.durationMin)
@@ -44,11 +49,11 @@ export function SessionBar(props: SessionBarProps) {
         {clock(remaining)}
       </span>
 
-      {running ? (
+      {!ended ? (
         <>
           <div className="flex flex-col gap-1">
             <span className="text-muted text-xs leading-none">
-              {overtime ? 'Over time' : PHASES[current].label}
+              {paused ? 'Paused' : overtime ? 'Over time' : PHASES[current].label}
             </span>
             <div className="flex gap-0.5" aria-hidden="true">
               {PHASES.map((phase, index) => (
@@ -61,6 +66,18 @@ export function SessionBar(props: SessionBarProps) {
               ))}
             </div>
           </div>
+          <Tooltip delay={400}>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="ghost"
+              aria-label={paused ? 'Resume session' : 'Pause session'}
+              onPress={props.onTogglePause}
+            >
+              {paused ? <Play className="size-4" /> : <Pause className="size-4" />}
+            </Button>
+            <Tooltip.Content>{paused ? 'Resume' : 'Pause'}</Tooltip.Content>
+          </Tooltip>
           <Button size="sm" variant="tertiary" isPending={props.ending} onPress={props.onEnd}>
             {props.ending ? 'Scoring…' : 'End session'}
           </Button>

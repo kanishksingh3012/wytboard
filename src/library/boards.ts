@@ -17,6 +17,9 @@ export interface BoardMeta {
   /** When the interview was started and ended; the timer runs on wall-clock time. */
   startedAt?: number
   endedAt?: number
+  /** Set while the session is paused; `pausedMs` is the total time spent paused so far. */
+  pausedAt?: number
+  pausedMs?: number
   hintsUsed?: number
   feedback?: Feedback
   /** Small JPEG data URL of the canvas, absent until something is drawn. */

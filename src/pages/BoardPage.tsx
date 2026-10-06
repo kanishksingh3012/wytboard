@@ -19,6 +19,8 @@ import {
   type BoardScene,
 } from '../library/boards'
 
+const currentTime = () => Date.now()
+
 type Loaded = { meta: BoardMeta; scene?: BoardScene } | 'missing' | null
 
 const SAVE_LABEL: Record<SaveState, string> = {
@@ -40,6 +42,7 @@ export function BoardPage() {
   const [ending, setEnding] = useState(false)
   const [endError, setEndError] = useState('')
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [openOnPhone, setOpenOnPhone] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -82,7 +85,43 @@ export function BoardPage() {
     )
   }
 
+  // The canvas, toolbar and interviewer panel do not fit a phone screen.
+  if (window.innerWidth < 640 && !openOnPhone) {
+    return (
+      <div className="bg-background flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="text-base font-medium">Boards need a bigger screen</p>
+        <p className="text-muted max-w-xs text-sm">
+          Wytboard's whiteboard is made for laptops and tablets. Open this page on one of those to
+          practise.
+        </p>
+        <Link to="/" className="text-accent text-sm font-medium underline-offset-4 hover:underline">
+          Back to home
+        </Link>
+        <button
+          type="button"
+          className="text-muted cursor-pointer text-xs underline underline-offset-4"
+          onClick={() => setOpenOnPhone(true)}
+        >
+          Open anyway
+        </button>
+      </div>
+    )
+  }
+
   const { meta } = loaded
+  // Time spent paused is taken out by moving the start forward.
+  const startedAt = meta.startedAt === undefined ? undefined : meta.startedAt + (meta.pausedMs ?? 0)
+  const paused = meta.pausedAt !== undefined && meta.endedAt === undefined
+
+  const togglePause = () => {
+    const now = currentTime()
+    if (meta.pausedAt === undefined) {
+      patchMeta({ pausedAt: now })
+    } else {
+      patchMeta({ pausedAt: undefined, pausedMs: (meta.pausedMs ?? 0) + now - meta.pausedAt })
+    }
+  }
+
   const durationMin = (meta.session ?? sessionDefaultsFrom(settings)).durationMin
 
   // Keeps the stored board and the screen in step.
@@ -100,8 +139,8 @@ export function BoardPage() {
   // Stops the clock, then asks the model to score the session.
   const endSession = async () => {
     const config = llmConfigFrom(settings)
-    if (!config || !meta.startedAt) return
-    const endedAt = meta.endedAt ?? Date.now()
+    if (!config || !startedAt) return
+    const endedAt = meta.endedAt ?? meta.pausedAt ?? Date.now()
     patchMeta({ endedAt })
     setEnding(true)
     setEndError('')
@@ -111,7 +150,7 @@ export function BoardPage() {
         brief: meta.brief,
         transcript: await getTranscript(id),
         board: await boardRef.current?.capture(),
-        minutes: Math.max(1, Math.round((endedAt - meta.startedAt) / 60_000)),
+        minutes: Math.max(1, Math.round((endedAt - startedAt) / 60_000)),
       })
       setLoaded({ ...loaded, meta: { ...meta, endedAt, feedback } })
       void updateBoardMeta(id, { feedback })
@@ -192,17 +231,21 @@ export function BoardPage() {
         brief={loaded.meta.brief}
         session={loaded.meta.session}
         captureBoard={() => boardRef.current?.capture()}
-        startedAt={meta.startedAt}
+        startedAt={startedAt}
         ended={meta.endedAt !== undefined}
+        paused={paused}
+        onResume={togglePause}
         hintsUsed={meta.hintsUsed ?? 0}
         onStart={startSession}
         onHintUsed={() => patchMeta({ hintsUsed: (meta.hintsUsed ?? 0) + 1 })}
       />
 
-      {meta.startedAt && (
+      {startedAt && (
         <SessionBar
-          startedAt={meta.startedAt}
+          startedAt={startedAt}
           endedAt={meta.endedAt}
+          pausedAt={meta.pausedAt}
+          onTogglePause={togglePause}
           durationMin={durationMin}
           hasFeedback={meta.feedback !== undefined}
           ending={ending}
