@@ -20,7 +20,7 @@ import { chat, listModels } from '../llm/client'
 import { kokoroSpeech, preloadKokoro } from '../voice/kokoro'
 import { getPersonality } from '../interviewer/personalities'
 import { PROVIDERS, getProvider, type ProviderId } from '../llm/providers'
-import { baseUrlFor, llmConfigFrom, updateSettings, useSettings } from '../settings/settings'
+import { baseUrlFor, llmConfigFrom, modelFor, updateSettings, useSettings } from '../settings/settings'
 
 type Status = { kind: 'idle' | 'busy' | 'ok' | 'error'; text: string }
 
@@ -41,7 +41,8 @@ export function SettingsPage() {
   const settings = useSettings()
   const provider = getProvider(settings.provider)
   const apiKey = settings.apiKeys[settings.provider] ?? ''
-  const model = settings.models[settings.provider] ?? ''
+  // An empty field falls back to the provider's recommended model.
+  const model = settings.models[settings.provider] ?? modelFor(settings)
   const baseUrl = baseUrlFor(settings)
 
   const [showKey, setShowKey] = useState(false)
@@ -209,7 +210,7 @@ export function SettingsPage() {
                 list="model-options"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="Model name"
+                placeholder={provider.defaultModel ?? 'Model name'}
               />
               <Button
                 variant="tertiary"

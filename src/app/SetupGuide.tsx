@@ -13,8 +13,8 @@ const STEPS = [
     body: 'The key stays in this browser and is sent only to the provider you choose.',
   },
   {
-    title: 'Pick a model and test',
-    body: 'Press "Load models", choose the newest "flash" model, then "Test connection".',
+    title: 'Test the connection',
+    body: 'A recommended model is already filled in. Press "Test connection" to check it works.',
   },
 ]
 

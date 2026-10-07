@@ -3,6 +3,8 @@ export interface LlmConfig {
   baseUrl: string
   apiKey: string
   model: string
+  /** Tried in order when `model` is overloaded. */
+  fallbackModels?: string[]
   /** Provider-specific request fields, merged into the chat request body. */
   extraBody?: Record<string, unknown>
 }
@@ -38,6 +40,11 @@ function headers(apiKey: string): HeadersInit {
   }
 }
 
+/** The provider is up but has no capacity; a retry or another model often works. */
+function isOverloaded(status: number | undefined): boolean {
+  return status === 503 || status === 529
+}
+
 async function readError(response: Response): Promise<LlmError> {
   let detail = ''
   try {
@@ -53,6 +60,8 @@ async function readError(response: Response): Promise<LlmError> {
       ? 'The provider rejected the API key.'
       : response.status === 429
         ? 'Rate limit reached. Wait a moment and try again.'
+        : isOverloaded(response.status)
+          ? 'The AI model is busy right now. Try again in a moment.'
         : `The provider returned an error (${response.status}).`
 
   return new LlmError(detail ? `${prefix} ${detail}` : prefix, response.status)
@@ -70,10 +79,34 @@ async function request(url: string, init: RequestInit): Promise<Response> {
   return response
 }
 
+/** Waits before the second try on an overloaded model. */
+const RETRY_DELAY_MS = 1500
+
 export async function chat(
   config: LlmConfig,
   messages: ChatMessage[],
   options: { maxTokens?: number; signal?: AbortSignal } = {},
+): Promise<string> {
+  // An overloaded model gets one retry; after that the backup models are tried.
+  const attempts = [config.model, config.model, ...(config.fallbackModels ?? [])]
+  let lastError: unknown
+
+  for (const [index, model] of attempts.entries()) {
+    if (index === 1) await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
+    try {
+      return await chatOnce({ ...config, model }, messages, options)
+    } catch (cause) {
+      lastError = cause
+      if (!(cause instanceof LlmError && isOverloaded(cause.status))) throw cause
+    }
+  }
+  throw lastError
+}
+
+async function chatOnce(
+  config: LlmConfig,
+  messages: ChatMessage[],
+  options: { maxTokens?: number; signal?: AbortSignal },
 ): Promise<string> {
   const response = await request(endpoint(config.baseUrl, '/chat/completions'), {
     method: 'POST',

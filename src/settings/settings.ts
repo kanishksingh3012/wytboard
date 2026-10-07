@@ -73,15 +73,20 @@ export function baseUrlFor(settings: Settings): string {
     : getProvider(settings.provider).baseUrl
 }
 
+/** The chosen model, or the provider's recommended one when none is chosen. */
+export function modelFor(settings: Settings): string {
+  return settings.models[settings.provider]?.trim() || getProvider(settings.provider).defaultModel || ''
+}
+
 /** The LLM connection to use, or null when it is not fully configured yet. */
 export function llmConfigFrom(settings: Settings): LlmConfig | null {
   const baseUrl = baseUrlFor(settings)
   const apiKey = settings.apiKeys[settings.provider]?.trim() ?? ''
-  const model = settings.models[settings.provider]?.trim() ?? ''
+  const model = modelFor(settings)
   // A custom URL may be a local server that takes no key.
   const keyOk = settings.provider === 'custom' || apiKey !== ''
-  const { extraBody } = getProvider(settings.provider)
-  return baseUrl && model && keyOk ? { baseUrl, apiKey, model, extraBody } : null
+  const { extraBody, fallbackModels } = getProvider(settings.provider)
+  return baseUrl && model && keyOk ? { baseUrl, apiKey, model, fallbackModels, extraBody } : null
 }
 
 export function sessionDefaultsFrom(settings: Settings): SessionOptions {

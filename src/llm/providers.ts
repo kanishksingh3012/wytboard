@@ -7,6 +7,10 @@ export interface Provider {
   baseUrl: string
   /** Page where the user can create an API key. */
   keyUrl?: string
+  /** Used when the user has not chosen a model. */
+  defaultModel?: string
+  /** Tried in order when the chosen model is overloaded. */
+  fallbackModels?: string[]
   /** Extra request fields this provider needs. */
   extraBody?: Record<string, unknown>
 }
@@ -17,6 +21,8 @@ export const PROVIDERS: Provider[] = [
     label: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     keyUrl: 'https://aistudio.google.com/apikey',
+    defaultModel: 'models/gemini-3.8-flash',
+    fallbackModels: ['models/gemini-3.7-flash', 'models/gemini-flash-latest'],
     // Gemini counts its hidden reasoning against max_tokens; without this, short
     // reply caps cut answers off mid-sentence.
     extraBody: { reasoning_effort: 'low' },
