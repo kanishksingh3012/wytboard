@@ -7,7 +7,7 @@ Wytboard is free to run: it is a static web app with no server. Each user brings
 their own LLM API key, which stays in their browser, and boards are saved in the
 browser too.
 
-**Try it:** https://kanishksingh3012.github.io/wytboard/
+**Try it:** https://wytboard.vercel.app/
 
 ![Wytboard home screen](docs/screenshot-home.png)
 
