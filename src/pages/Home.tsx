@@ -1,4 +1,4 @@
-import { AlertDialog, Button, Dropdown, Label, TextArea } from '@heroui/react'
+import { AlertDialog, Button, Dropdown, Label, TextArea, Tooltip } from '@heroui/react'
 import { ArrowRight, BookOpen, Dices, Ellipsis, Settings, SquarePen, Upload } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router'
@@ -221,14 +221,17 @@ export function Home() {
                   {boards.length} {boards.length === 1 ? 'board' : 'boards'}
                 </span>
               )}
-              <Button size="sm" variant="tertiary" onPress={() => fileInput.current?.click()}>
-                <Upload className="size-4" />
-                Import board
-              </Button>
+              <Tooltip delay={400}>
+                <Button size="sm" variant="tertiary" onPress={() => fileInput.current?.click()}>
+                  <Upload className="size-4" />
+                  Import board
+                </Button>
+                <Tooltip.Content>Takes a .wytboard.json file exported from Wytboard</Tooltip.Content>
+              </Tooltip>
               <input
                 ref={fileInput}
                 type="file"
-                accept=".json,application/json"
+                accept=".wytboard.json,.json,application/json"
                 className="hidden"
                 aria-label="Import a board file"
                 onChange={(event) => void onImport(event)}
@@ -238,7 +241,8 @@ export function Home() {
 
           <p className="text-muted -mt-2 mb-4 text-sm">
             Saved only in this browser. Nobody else can see a board unless you send them its
-            image or exported file.
+            image or exported file. “Import board” takes a <code>.wytboard.json</code> file made
+            with “Export board file”.
           </p>
 
           {importError && (
