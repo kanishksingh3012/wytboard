@@ -13,9 +13,8 @@ import { useCallback, useEffect, useImperativeHandle, useRef, type Ref } from 'r
 import type { Theme } from '../app/useTheme'
 import { saveBoardScene, type BoardScene } from '../library/boards'
 import './board.css'
+import { applyDotGrid } from './dotGrid'
 
-/** Distance between grid dots at 100% zoom, in pixels. */
-const DOT_SPACING = 24
 /** How long to wait after the last edit before saving. */
 const SAVE_DELAY_MS = 800
 const THUMBNAIL_SIZE = 480
@@ -90,18 +89,8 @@ export function Board({ boardId, theme, initialScene, onSaveStateChange, ref }: 
   const timer = useRef<number | undefined>(undefined)
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
 
-  // The dot grid is a CSS background behind a transparent canvas, so it has to
-  // be moved and scaled by hand to follow the canvas as the user pans and zooms.
   const syncDotGrid = useCallback((scrollX: number, scrollY: number, zoom: AppState['zoom']) => {
-    const wrapper = wrapperRef.current
-    if (!wrapper) return
-
-    // Keep dots readable when zoomed far out by doubling the spacing.
-    let spacing = DOT_SPACING * zoom.value
-    while (spacing < DOT_SPACING / 2) spacing *= 2
-
-    wrapper.style.backgroundSize = `${spacing}px ${spacing}px`
-    wrapper.style.backgroundPosition = `${scrollX * zoom.value}px ${scrollY * zoom.value}px`
+    applyDotGrid(wrapperRef.current, scrollX, scrollY, zoom.value)
   }, [])
 
   const save = useCallback(async () => {

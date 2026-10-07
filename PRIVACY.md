@@ -10,6 +10,13 @@ Wytboard is a static web app with no server, no accounts and no analytics.
 Clearing the site's data in your browser removes all of it. Exported board files
 contain the drawing, transcript and feedback, but never your API key.
 
+## Share links
+
+"Copy share link" puts the whole board (drawing, title and problem statement) inside
+the link itself, compressed. Nothing is uploaded, but anyone who has the link can
+view the board, so share it as you would the board. The interview transcript and
+feedback are not included.
+
 ## Sent to other services
 
 - **Your AI provider.** When you talk to the interviewer or end a session, your

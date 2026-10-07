@@ -20,6 +20,7 @@ import {
   listBoards,
   type BoardMeta,
 } from '../library/boards'
+import { createShareLink } from '../library/share'
 
 function formatEdited(timestamp: number): string {
   const date = new Date(timestamp)
@@ -66,6 +67,18 @@ export function Home() {
 
   const fileInput = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState('')
+  const [shareNotice, setShareNotice] = useState('')
+
+  const copyShareLink = async (board: BoardMeta) => {
+    setImportError('')
+    try {
+      await navigator.clipboard.writeText(await createShareLink(board.id))
+      setShareNotice(`Link to “${board.title}” copied. Anyone with the link can view the board.`)
+    } catch (cause) {
+      setShareNotice('')
+      setImportError(cause instanceof Error ? cause.message : 'Could not create the link.')
+    }
+  }
 
   // Saves the board, its drawing and its transcript as one file.
   const downloadBoard = async (board: BoardMeta) => {
@@ -222,6 +235,17 @@ export function Home() {
             </div>
           </div>
 
+          <p className="text-muted -mt-2 mb-4 text-sm">
+            Saved only in this browser. Nobody else can see a board unless you share its link or
+            an exported file.
+          </p>
+
+          {shareNotice && (
+            <p role="status" className="text-success mb-4 text-sm">
+              {shareNotice}
+            </p>
+          )}
+
           {importError && (
             <p role="alert" className="text-danger mb-4 text-sm">
               {importError}
@@ -281,6 +305,7 @@ export function Home() {
                           onAction={(key) => {
                             if (key === 'open') void navigate(`/board/${board.id}`)
                             if (key === 'retry') void retryBoard(board)
+                            if (key === 'share') void copyShareLink(board)
                             if (key === 'export') void downloadBoard(board)
                             if (key === 'delete') setPendingDelete(board)
                           }}
@@ -290,6 +315,9 @@ export function Home() {
                           </Dropdown.Item>
                           <Dropdown.Item id="retry" textValue="Retry this problem">
                             <Label>Retry this problem</Label>
+                          </Dropdown.Item>
+                          <Dropdown.Item id="share" textValue="Copy share link">
+                            <Label>Copy share link</Label>
                           </Dropdown.Item>
                           <Dropdown.Item id="export" textValue="Export">
                             <Label>Export</Label>

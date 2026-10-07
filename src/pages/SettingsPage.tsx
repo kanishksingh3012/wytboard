@@ -377,6 +377,10 @@ export function SettingsPage() {
               device. Canvas fonts are loaded from a public CDN.
             </li>
             <li>
+              A share link contains the board itself (drawing, title and problem), not the
+              transcript or feedback. Nothing is uploaded, but anyone with the link can view it.
+            </li>
+            <li>
               If you send feedback, your message and your email address, only if you give it,
               go to the site owner through a form service. Nothing from your boards is included.
             </li>

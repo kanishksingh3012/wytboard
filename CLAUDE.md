@@ -43,7 +43,9 @@ Keep these areas separate so each can be swapped without touching the others:
   the cheat sheet shown on the board in practice mode only, never in interview mode.
 - `src/feedback/`: floating feedback form. Posts JSON to `VITE_FEEDBACK_URL` (a form
   service, since there is no server) and is hidden when that is unset.
-- `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`).
+- `src/library/`: boards, scenes and transcripts in IndexedDB (`idb-keyval`), export
+  and import, and share links (`share.ts`): the board is compressed into the URL
+  itself, so sharing needs no server. `SharedPage` opens such a link view-only.
 - `src/settings/`: provider, per-provider API keys and models, personality and
   mode, in `localStorage`.
 - `src/voice/`: `SpeechOutput` with two engines: the browser voice (default) and
