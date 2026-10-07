@@ -18,7 +18,7 @@ answers clarifying questions and probes their reasoning.
 
 ## Stack
 
-- Vite + React + TypeScript, deployed as a static site (GitHub Pages or Cloudflare Pages)
+- Vite + React + TypeScript, deployed as a static site on Vercel
 - Tailwind CSS + HeroUI for all UI outside the canvas
 - Excalidraw (`@excalidraw/excalidraw`) for the canvas, with a dot-grid background
 - IndexedDB for the board library, transcripts and settings
@@ -126,9 +126,8 @@ rest of the UI floats over it and stays out of the way.
 - One commit per build-order step, pushed to GitHub (`origin`, public repo
   `wytboard`) as soon as the step is verified. Do not leave work local only.
 - The public site is on Vercel: https://wytboard.vercel.app/ (project `wytboard`,
-  deployed with `vercel --prod`). Pushing to `main` also deploys a mirror to GitHub
-  Pages (`.github/workflows/deploy.yml`): https://kanishksingh3012.github.io/wytboard/.
-  Asset paths are relative (`base: './'`).
+  deployed with `vercel --prod`). GitHub Pages is turned off. Asset paths are
+  relative (`base: './'`).
 - Before committing: `npm run build` and `npm run lint` must pass, and the change
   must be checked in the browser.
 - Theme tokens live in `src/theme.css`: teal accent, light by default with a dark toggle.
