@@ -20,7 +20,7 @@ import {
   listBoards,
   type BoardMeta,
 } from '../library/boards'
-import { createShareLink } from '../library/share'
+import { renderBoardImage } from '../library/image'
 
 function formatEdited(timestamp: number): string {
   const date = new Date(timestamp)
@@ -67,29 +67,30 @@ export function Home() {
 
   const fileInput = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState('')
-  const [shareNotice, setShareNotice] = useState('')
 
-  const copyShareLink = async (board: BoardMeta) => {
+  const saveFile = (blob: Blob, name: string) => {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const fileName = (board: BoardMeta) => board.title.replace(/[^\w -]+/g, '').trim() || 'board'
+
+  const downloadImage = async (board: BoardMeta) => {
     setImportError('')
-    try {
-      await navigator.clipboard.writeText(await createShareLink(board.id))
-      setShareNotice(`Link to “${board.title}” copied. Anyone with the link can view the board.`)
-    } catch (cause) {
-      setShareNotice('')
-      setImportError(cause instanceof Error ? cause.message : 'Could not create the link.')
-    }
+    const image = await renderBoardImage(board.id)
+    if (!image) return setImportError(`“${board.title}” has nothing drawn on it yet.`)
+    saveFile(image, `${fileName(board)}.png`)
   }
 
   // Saves the board, its drawing and its transcript as one file.
   const downloadBoard = async (board: BoardMeta) => {
     const file = await exportBoard(board.id)
     if (!file) return
-    const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${board.title.replace(/[^\w -]+/g, '').trim() || 'board'}.wytboard.json`
-    link.click()
-    URL.revokeObjectURL(url)
+    saveFile(new Blob([JSON.stringify(file)], { type: 'application/json' }), `${fileName(board)}.wytboard.json`)
   }
 
   const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -236,15 +237,9 @@ export function Home() {
           </div>
 
           <p className="text-muted -mt-2 mb-4 text-sm">
-            Saved only in this browser. Nobody else can see a board unless you share its link or
-            an exported file.
+            Saved only in this browser. Nobody else can see a board unless you send them its
+            image or exported file.
           </p>
-
-          {shareNotice && (
-            <p role="status" className="text-success mb-4 text-sm">
-              {shareNotice}
-            </p>
-          )}
 
           {importError && (
             <p role="alert" className="text-danger mb-4 text-sm">
@@ -305,7 +300,7 @@ export function Home() {
                           onAction={(key) => {
                             if (key === 'open') void navigate(`/board/${board.id}`)
                             if (key === 'retry') void retryBoard(board)
-                            if (key === 'share') void copyShareLink(board)
+                            if (key === 'image') void downloadImage(board)
                             if (key === 'export') void downloadBoard(board)
                             if (key === 'delete') setPendingDelete(board)
                           }}
@@ -316,11 +311,11 @@ export function Home() {
                           <Dropdown.Item id="retry" textValue="Retry this problem">
                             <Label>Retry this problem</Label>
                           </Dropdown.Item>
-                          <Dropdown.Item id="share" textValue="Copy share link">
-                            <Label>Copy share link</Label>
+                          <Dropdown.Item id="image" textValue="Download image">
+                            <Label>Download image</Label>
                           </Dropdown.Item>
-                          <Dropdown.Item id="export" textValue="Export">
-                            <Label>Export</Label>
+                          <Dropdown.Item id="export" textValue="Export board file">
+                            <Label>Export board file</Label>
                           </Dropdown.Item>
                           <Dropdown.Item id="delete" textValue="Delete" variant="danger">
                             <Label>Delete</Label>
